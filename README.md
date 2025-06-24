@@ -4,7 +4,7 @@ A 2D grid-based turn-based strategy game made with Unity. Inspired by classic ta
 
 - Turn-based unit movement
 - A tile-based grid system
-- Simple combat mechanics
+- Combat mechanics
 - Expandable systems for enemies, items, and more
 
 This game is in early development and intended as both a learning project and a foundation for future gameplay systems (like AI, abilities, fog of war, etc).
