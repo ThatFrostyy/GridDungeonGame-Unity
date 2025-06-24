@@ -30,6 +30,7 @@ public class GameObjectLocator : MonoBehaviour
     [Header("Cached References")]
     [SerializeField] private Player cachedPlayer;
     [SerializeField] private Tilemap cachedTilemap;
+    [SerializeField] private Tilemap cachedObstacleTilemapMap;
     [SerializeField] private ObstacleTilemap cachedObstacleTilemap;
     [SerializeField] private TileSelection cachedTileSelection;
     [SerializeField] private UIManager cachedUIManager;
@@ -59,12 +60,24 @@ public class GameObjectLocator : MonoBehaviour
         }
     }
 
+    public Tilemap ObstacleTilemapMap
+    {
+        get
+        {
+            if (cachedObstacleTilemapMap == null)
+                cachedObstacleTilemapMap = GetComponentByTag<Tilemap>("ObstacleTilemap");
+
+            return cachedObstacleTilemapMap;
+        }
+    }
+
     public ObstacleTilemap ObstacleTilemap
     {
         get
         {
             if (cachedObstacleTilemap == null)
                 cachedObstacleTilemap = GetComponentByTag<ObstacleTilemap>("ObstacleTilemap");
+
             return cachedObstacleTilemap;
         }
     }
@@ -183,6 +196,7 @@ public class GameObjectLocator : MonoBehaviour
         // Pre-load important references
         _ = Player;
         _ = Tilemap;
+        _ = ObstacleTilemapMap; 
         _ = ObstacleTilemap;
         _ = TileSelection;
         _ = UIManager;
