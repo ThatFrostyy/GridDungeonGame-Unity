@@ -1,0 +1,20 @@
+using UnityEngine;
+
+[CreateAssetMenu(menuName = "Inventory/Item")]
+public class InventoryItem : ScriptableObject
+{
+    public string itemName;
+    public Sprite icon;
+    public ItemType itemType;
+    public GameObject prefab;
+    public Weapon weaponData;
+}
+
+public enum ItemType
+{
+    Generic,
+    HeadArmor,
+    BodyArmor,
+    Weapon,
+    Shield
+}
