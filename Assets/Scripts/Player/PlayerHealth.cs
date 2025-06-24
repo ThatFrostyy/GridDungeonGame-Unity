@@ -1,91 +1,49 @@
 using UnityEngine;
-using System;
-using System.Collections;
-using System.Collections.Generic;
 
-public class PlayerHealth : MonoBehaviour
+/// <summary>
+/// Handles player health, extends the base Health functionality
+/// </summary>
+public class PlayerHealth : Health
 {
-    [SerializeField] private int maxHealth = 100;
-    [SerializeField] private int currentHealth;
+    [Header("Player Specific")]
+    [SerializeField] private bool respawnOnDeath = false;
+    [SerializeField] private Vector3 respawnPosition = Vector3.zero;
 
-    [Header("Effects")]
-    [SerializeField] private GameObject hitEffectPrefab;
-    [SerializeField] private float flickerDuration = 0.3f;
-    [SerializeField] private int flickerCount = 3;
-
-    private List<SpriteRenderer> spriteRenderers;
-
-    public int MaxHealth => maxHealth;
-    public int CurrentHealth => currentHealth;
-
-    // Event for UI and listeners
-    public event Action<int, int> OnHealthChanged;
-
-    private void Awake()
+    /// <summary>
+    /// Handles player death
+    /// </summary>
+    protected override void Die()
     {
-        currentHealth = maxHealth;
-        OnHealthChanged?.Invoke(currentHealth, maxHealth);
-
-        spriteRenderers = new List<SpriteRenderer>(GetComponentsInChildren<SpriteRenderer>(true));
-    }
-
-    public void TakeDamage(int amount)
-    {
-        currentHealth = Mathf.Max(currentHealth - amount, 0);
-        OnHealthChanged?.Invoke(currentHealth, maxHealth);
-
-        if (hitEffectPrefab != null)
+        OnDeath?.Invoke();
+        
+        if (respawnOnDeath)
         {
-            var effect = Instantiate(hitEffectPrefab, transform.position, Quaternion.identity);
+            RespawnPlayer();
         }
-
-        if (spriteRenderers != null && spriteRenderers.Count > 0)
+        else
         {
-            StartCoroutine(Flicker());
-        }
-
-        if (currentHealth == 0)
-        {
-            Die();
+            // For now just shows a message, can be expanded with game over screen
+            Debug.Log("Player died! Game Over");
+            // Here could show game over screen, restart level, etc.
         }
     }
 
-    private IEnumerator Flicker()
+    /// <summary>
+    /// Respawns the player at the configured position
+    /// </summary>
+    private void RespawnPlayer()
     {
-        for (int i = 0; i < flickerCount; i++)
-        {
-            SetRenderersEnabled(false);
-            yield return new WaitForSeconds(flickerDuration / (flickerCount * 2f));
-            SetRenderersEnabled(true);
-            yield return new WaitForSeconds(flickerDuration / (flickerCount * 2f));
-        }
+        transform.position = respawnPosition;
+        ResetHealth();
+        Debug.Log("Player respawned!");
     }
 
-    private void SetRenderersEnabled(bool enabled)
+    /// <summary>
+    /// Sets the respawn position
+    /// </summary>
+    /// <param name="position">New respawn position</param>
+    public void SetRespawnPosition(Vector3 position)
     {
-        foreach (var sr in spriteRenderers)
-        {
-            if (sr != null)
-            {
-                sr.enabled = enabled;
-            }
-        }
-    }
-
-    public void Heal(int amount)
-    {
-        currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
-        OnHealthChanged?.Invoke(currentHealth, maxHealth);
-    }
-
-    public void Die()
-    {
-        Debug.Log("Player died!");
-    }
-
-    public void ResetHealth()
-    {
-        currentHealth = maxHealth;
-        OnHealthChanged?.Invoke(currentHealth, maxHealth);
+        respawnPosition = position;
     }
 }

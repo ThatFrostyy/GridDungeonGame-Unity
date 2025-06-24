@@ -1,11 +1,10 @@
 using UnityEngine;
 
-public class Player : MonoBehaviour
+/// <summary>
+/// Main player component that handles combat and equipment
+/// </summary>
+public class Player : ActionPointsComponent
 {
-    [Header("Action Points")]
-    [SerializeField] private int maxActionPoints = 3;
-    [SerializeField] private int currentActionPoints;
-
     [Header("Combat")]
     [SerializeField] private Weapon equippedWeapon; // Null = unarmed
     [SerializeField] private int unarmedDamage = 3;
@@ -21,110 +20,189 @@ public class Player : MonoBehaviour
 
     private GameObject equippedWeaponObject;
 
-    public int MaxActionPoints => maxActionPoints;
-    public int CurrentActionPoints => currentActionPoints;
-
-    private void Awake()
+    /// <summary>
+    /// Initializes action points and subscribes to events
+    /// </summary>
+    protected override void Awake()
     {
-        currentActionPoints = maxActionPoints;
+        base.Awake();
+        SubscribeToEvents();
     }
 
-    public bool UseActionPoint(int amount = 1)
+    /// <summary>
+    /// Subscribes to necessary events
+    /// </summary>
+    private void SubscribeToEvents()
     {
-        if (currentActionPoints >= amount)
+        OnActionPointsChanged += UpdateUI;
+    }
+
+    /// <summary>
+    /// Updates UI when action points change
+    /// </summary>
+    private void UpdateUI(int current, int max)
+    {
+        if (UIManager.Instance != null)
         {
-            currentActionPoints -= amount;
-            UIManager.Instance.UpdateAP(currentActionPoints, maxActionPoints);
-            return true;
+            UIManager.Instance.UpdateAP(current, max);
         }
-        return false;
     }
 
-    public void GainActionPoints(int amount)
+    /// <summary>
+    /// Called when action points are reset (turn start)
+    /// </summary>
+    protected override void OnActionPointsReset()
     {
-        currentActionPoints = Mathf.Min(currentActionPoints + amount, maxActionPoints);
+        base.OnActionPointsReset();
+        UpdateUI(currentActionPoints, maxActionPoints);
     }
 
-    public void LoseActionPoints(int amount)
-    {
-        currentActionPoints = Mathf.Max(currentActionPoints - amount, 0);
-    }
-
-    public void ResetActionPoints()
-    {
-        currentActionPoints = maxActionPoints;
-        UIManager.Instance.UpdateAP(currentActionPoints, maxActionPoints);
-    }
-
+    /// <summary>
+    /// Executes an attack against an enemy
+    /// </summary>
+    /// <param name="enemy">Target enemy for the attack</param>
     public void Attack(EnemyHealth enemy)
     {
-        int damage = equippedWeapon ? equippedWeapon.damage : unarmedDamage;
-        AudioClip attackClip = equippedWeapon ? equippedWeapon.attackSound : unarmedAttackSound;
+        if (enemy == null)
+        {
+            Debug.LogWarning("Attempted to attack null enemy!", this);
+            return;
+        }
 
+        int damage = CalculateAttackDamage();
+        AudioClip attackClip = GetAttackSound();
+
+        PlayAttackAnimation();
+        PlayAttackSound(attackClip);
+        ApplyDamageToEnemy(enemy, damage);
+    }
+
+    /// <summary>
+    /// Calculates attack damage based on equipped weapon
+    /// </summary>
+    private int CalculateAttackDamage()
+    {
+        return equippedWeapon ? equippedWeapon.damage : unarmedDamage;
+    }
+
+    /// <summary>
+    /// Gets attack sound based on equipped weapon
+    /// </summary>
+    private AudioClip GetAttackSound()
+    {
+        return equippedWeapon ? equippedWeapon.attackSound : unarmedAttackSound;
+    }
+
+    /// <summary>
+    /// Plays the attack animation
+    /// </summary>
+    private void PlayAttackAnimation()
+    {
         if (animator != null)
         {
             animator.SetTrigger("Attack");
         }
+    }
 
+    /// <summary>
+    /// Plays attack sound with pitch variation
+    /// </summary>
+    private void PlayAttackSound(AudioClip attackClip)
+    {
         if (audioSource != null && attackClip != null)
         {
             audioSource.pitch = Random.Range(0.8f, 1.2f);
             audioSource.PlayOneShot(attackClip);
-
-            audioSource.pitch = 1f;
-        }
-
-        if (enemy != null)
-        {
-            enemy.TakeDamage(damage);
+            audioSource.pitch = 1f; // Reset pitch
         }
     }
 
+    /// <summary>
+    /// Applies damage to the target enemy
+    /// </summary>
+    private void ApplyDamageToEnemy(EnemyHealth enemy, int damage)
+    {
+        enemy.TakeDamage(damage);
+    }
+
+    /// <summary>
+    /// Equips a new weapon, destroying the previous one if it exists
+    /// </summary>
+    /// <param name="weapon">Weapon to equip (null to unequip)</param>
     public void EquipWeapon(Weapon weapon)
     {
-        if (equippedWeaponObject != null)
-        {
-            Destroy(equippedWeaponObject);
-        }
+        UnequipCurrentWeapon();
 
         if (weapon != null && weapon.prefab != null)
         {
-            equippedWeaponObject = Instantiate(weapon.prefab, weaponHolder);
-            equippedWeaponObject.name = weapon.weaponName;
+            CreateWeaponInstance(weapon);
         }
 
         equippedWeapon = weapon;
-
-        // Set the weapon type parameter for the animator
-        if (animator != null)
-        {
-            animator.SetInteger("WeaponType", GetWeaponTypeInt(weapon));
-        }
+        UpdateAnimatorWeaponType(weapon);
     }
 
+    /// <summary>
+    /// Unequips the current weapon
+    /// </summary>
     public void UnequipWeapon()
+    {
+        EquipWeapon(null);
+    }
+
+    /// <summary>
+    /// Destroys the current weapon instance
+    /// </summary>
+    private void UnequipCurrentWeapon()
     {
         if (equippedWeaponObject != null)
         {
             Destroy(equippedWeaponObject);
             equippedWeaponObject = null;
         }
-
-        equippedWeapon = null;
-
-        // Reset to unarmed
-        if (animator != null)
-        {
-            animator.SetInteger("WeaponType", 0);
-        }
-        animator.runtimeAnimatorController = defaultController;
     }
 
+    /// <summary>
+    /// Creates the visual weapon instance
+    /// </summary>
+    private void CreateWeaponInstance(Weapon weapon)
+    {
+        equippedWeaponObject = Instantiate(weapon.prefab, weaponHolder);
+        equippedWeaponObject.name = weapon.weaponName;
+    }
+
+    /// <summary>
+    /// Updates the weapon type parameter in the animator
+    /// </summary>
+    private void UpdateAnimatorWeaponType(Weapon weapon)
+    {
+        if (animator != null)
+        {
+            int weaponType = GetWeaponTypeInt(weapon);
+            animator.SetInteger("WeaponType", weaponType);
+
+            // Reset to default controller if no weapon
+            if (weapon == null)
+            {
+                animator.runtimeAnimatorController = defaultController;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Converts weapon type to integer for animator
+    /// </summary>
+    /// <param name="weapon">Weapon to convert</param>
+    /// <returns>0 = no weapon, 1 = sword, etc.</returns>
     private int GetWeaponTypeInt(Weapon weapon)
     {
-        if (weapon == null) return 0; // 0 = unarmed
-        if (weapon.weaponName == "Sword") return 1;
-
-        return 0;
+        if (weapon == null) return 0; // No weapon
+        
+        // TODO: Use enums or dictionary for more scalable mapping
+        return weapon.weaponName switch
+        {
+            "Sword" => 1,
+            _ => 0
+        };
     }
 }

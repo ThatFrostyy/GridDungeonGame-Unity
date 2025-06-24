@@ -1,50 +1,50 @@
 using UnityEngine;
 
-public class Enemy : MonoBehaviour
+/// <summary>
+/// Main enemy component that handles references and configuration
+/// </summary>
+public class Enemy : ActionPointsComponent
 {
-    [Header("Action Points")]
-    [SerializeField] private int maxActionPoints = 3;
-    [SerializeField] private int currentActionPoints;
-
     [Header("References")]
     [SerializeField] private EnemyHealth health;
     [SerializeField] private EnemyHealthBar healthBar;
 
-    public int MaxActionPoints => maxActionPoints;
-    public int CurrentActionPoints => currentActionPoints;
+    /// <summary>
+    /// Gets the reference to the health component
+    /// </summary>
+    public EnemyHealth Health => health;
 
-    private void Awake()
+    /// <summary>
+    /// Initializes action points and sets up health bar
+    /// </summary>
+    protected override void Awake()
     {
-        currentActionPoints = maxActionPoints;
+        base.Awake();
+        SetupHealthBar();
+    }
 
+    /// <summary>
+    /// Sets up the health bar if components are assigned
+    /// </summary>
+    private void SetupHealthBar()
+    {
         if (health != null && healthBar != null)
         {
             healthBar.Setup(health, transform);
         }
-    }
-
-    public bool UseActionPoint(int amount = 1)
-    {
-        if (currentActionPoints >= amount)
+        else if (healthBar != null)
         {
-            currentActionPoints -= amount;
-            return true;
+            Debug.LogWarning($"Enemy {name}: HealthBar assigned but Health component is missing!", this);
         }
-        return false;
     }
 
-    public void GainActionPoints(int amount)
-    {
-        currentActionPoints = Mathf.Min(currentActionPoints + amount, maxActionPoints);
-    }
+    /// <summary>
+    /// Checks if the enemy is alive
+    /// </summary>
+    public bool IsAlive => health != null && health.IsAlive;
 
-    public void LoseActionPoints(int amount)
-    {
-        currentActionPoints = Mathf.Max(currentActionPoints - amount, 0);
-    }
-
-    public void ResetActionPoints()
-    {
-        currentActionPoints = maxActionPoints;
-    }
+    /// <summary>
+    /// Gets the enemy's health percentage
+    /// </summary>
+    public float HealthPercentage => health?.HealthPercentage ?? 0f;
 }
