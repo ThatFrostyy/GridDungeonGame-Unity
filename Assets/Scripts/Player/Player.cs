@@ -7,16 +7,17 @@ public class Player : ActionPointsComponent
 {
     [Header("Combat")]
     [SerializeField] private Weapon equippedWeapon; // Null = unarmed
-    [SerializeField] private int unarmedDamage = 3;
-    [SerializeField] private AudioClip unarmedAttackSound;
-    [SerializeField] private Animator animator;
-    [SerializeField] private AudioSource audioSource;
 
     [Header("Weapon Settings")]
     [SerializeField] private Transform weaponHolder;
+    [SerializeField] private int unarmedDamage = 3;
 
     [Header("References")]
-    [SerializeField] private RuntimeAnimatorController defaultController;
+    [SerializeField] private Animator animator;
+    [SerializeField] private AudioSource audioSource;
+
+    [Header("Audio Clips")]
+    [SerializeField] private AudioClip unarmedAttackSound;
 
     private GameObject equippedWeaponObject;
 
@@ -180,12 +181,6 @@ public class Player : ActionPointsComponent
         {
             int weaponType = GetWeaponTypeInt(weapon);
             animator.SetInteger("WeaponType", weaponType);
-
-            // Reset to default controller if no weapon
-            if (weapon == null)
-            {
-                animator.runtimeAnimatorController = defaultController;
-            }
         }
     }
 

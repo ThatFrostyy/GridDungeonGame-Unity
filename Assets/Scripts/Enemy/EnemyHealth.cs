@@ -14,7 +14,7 @@ public class EnemyHealth : Health
     /// </summary>
     protected override void Die()
     {
-        OnDeath?.Invoke();
+        RaiseOnDeath();
         SpawnDeathEffect();
         
         // Destroys the object after a small delay to allow effects

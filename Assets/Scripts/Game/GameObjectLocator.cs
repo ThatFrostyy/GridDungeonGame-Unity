@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.Tilemaps;
 
 /// <summary>
 /// Singleton that centralizes GameObject location by tag
@@ -28,6 +29,7 @@ public class GameObjectLocator : MonoBehaviour
     #region Cached References
     [Header("Cached References")]
     [SerializeField] private Player cachedPlayer;
+    [SerializeField] private Tilemap cachedTilemap;
     [SerializeField] private ObstacleTilemap cachedObstacleTilemap;
     [SerializeField] private TileSelection cachedTileSelection;
     [SerializeField] private UIManager cachedUIManager;
@@ -44,6 +46,16 @@ public class GameObjectLocator : MonoBehaviour
             if (cachedPlayer == null)
                 cachedPlayer = GetComponentByTag<Player>("Player");
             return cachedPlayer;
+        }
+    }
+
+    public Tilemap Tilemap
+    {
+        get
+        {
+            if (cachedTilemap == null)
+                cachedTilemap = GetComponentByTag<Tilemap>("Tilemap");
+            return cachedTilemap;
         }
     }
 
@@ -72,7 +84,7 @@ public class GameObjectLocator : MonoBehaviour
         get
         {
             if (cachedUIManager == null)
-                cachedUIManager = FindObjectOfType<UIManager>();
+                cachedUIManager = FindFirstObjectByType<UIManager>();
             return cachedUIManager;
         }
     }
@@ -170,12 +182,14 @@ public class GameObjectLocator : MonoBehaviour
     {
         // Pre-load important references
         _ = Player;
+        _ = Tilemap;
         _ = ObstacleTilemap;
         _ = TileSelection;
         _ = UIManager;
 
         // Validate that critical objects exist
         ValidateTagExists("Player");
+        ValidateTagExists("Tilemap");
         ValidateTagExists("ObstacleTilemap");
         ValidateTagExists("TileSelection");
     }

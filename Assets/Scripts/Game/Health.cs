@@ -163,4 +163,12 @@ public abstract class Health : MonoBehaviour
     /// Handles character death - must be implemented by derived classes
     /// </summary>
     protected abstract void Die();
+
+    /// <summary>
+    /// Protected helper method for raising the OnDeath event
+    /// </summary>
+    protected void RaiseOnDeath()
+    {
+        OnDeath?.Invoke();
+    }
 } 

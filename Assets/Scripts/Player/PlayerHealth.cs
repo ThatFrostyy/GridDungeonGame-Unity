@@ -14,8 +14,8 @@ public class PlayerHealth : Health
     /// </summary>
     protected override void Die()
     {
-        OnDeath?.Invoke();
-        
+        RaiseOnDeath();
+
         if (respawnOnDeath)
         {
             RespawnPlayer();

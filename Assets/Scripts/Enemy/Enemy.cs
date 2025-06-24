@@ -44,7 +44,13 @@ public class Enemy : ActionPointsComponent
     public bool IsAlive => health != null && health.IsAlive;
 
     /// <summary>
-    /// Gets the enemy's health percentage
+    /// Gets the enemy's health percentage using Unity’s overloaded null check
     /// </summary>
-    public float HealthPercentage => health?.HealthPercentage ?? 0f;
+    public float HealthPercentage
+    {
+        get
+        {
+            return health != null ? health.HealthPercentage : 0f;
+        }
+    }
 }
