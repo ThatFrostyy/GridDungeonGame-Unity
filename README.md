@@ -31,7 +31,7 @@ All visual credit goes to the original artist.
 - Dungeon generation
 - More enemies and items
 - Bosses
-- GUI
+- Better and more GUI
 - More sounds, effects, etc
 - Modular, expandable architecture
 - A card system

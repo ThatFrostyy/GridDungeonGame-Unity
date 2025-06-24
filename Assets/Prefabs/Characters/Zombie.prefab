@@ -98,12 +98,14 @@ MonoBehaviour:
   spotRange: 1
   retreatHealth: 0.3
   gridSize: {x: 1, y: 1}
+  attackDamage: 20
+  attackRange: 1
   animator: {fileID: 618116706123550398}
-  audioSource: {fileID: 4564234283358767975}
   moveSound: {fileID: 8300000, guid: cfc83f7da02c7ac43b86a91c67f4c1d8, type: 3}
   attackSound: {fileID: 8300000, guid: 4cdf9871b05f1ba4a918523942f26d8d, type: 3}
-  enemyComponent: {fileID: 8367718685409284708}
+  enemy: {fileID: 8367718685409284708}
   enemyHealth: {fileID: 8202765719025049396}
+  audioSource: {fileID: 4564234283358767975}
 --- !u!82 &4564234283358767975
 AudioSource:
   m_ObjectHideFlags: 0
@@ -218,6 +220,8 @@ MonoBehaviour:
   hitEffectPrefab: {fileID: 6823200998282874702, guid: 8f8fe12323625f5499b2853dd2ad3e58, type: 3}
   flickerDuration: 0.3
   flickerCount: 3
+  destroyDelay: 0.1
+  deathEffectPrefab: {fileID: 0}
 --- !u!114 &4879267033883145590
 MonoBehaviour:
   m_ObjectHideFlags: 0
