@@ -34,25 +34,27 @@ public class GridMovementCharacter : MonoBehaviour
     private ObstacleTilemap obstacleTilemap;
     private TileSelection tileSelection;
 
+    /// <summary>
+    /// Initializes references using the GameObjectLocator
+    /// </summary>
     private void Awake()
     {
-        GameObject obstacleTilemapObject = GameObject.FindGameObjectWithTag("ObstacleTilemap");
-        GameObject tileSelectionObject = GameObject.FindGameObjectWithTag("TileSelection");
-        if (obstacleTilemapObject != null)
+        InitializeReferences();
+    }
+
+    /// <summary>
+    /// Gets necessary references from the GameObjectLocator
+    /// </summary>
+    private void InitializeReferences()
+    {
+        if (GameObjectLocator.Instance != null)
         {
-            obstacleTilemap = obstacleTilemapObject.GetComponent<ObstacleTilemap>();
+            obstacleTilemap = GameObjectLocator.Instance.ObstacleTilemap;
+            tileSelection = GameObjectLocator.Instance.TileSelection;
         }
         else
         {
-            Debug.LogWarning("ObstacleTilemap not found. Ensure a Tilemap with the 'ObstacleTilemap' tag exists in the scene.");
-        }
-        if (tileSelectionObject != null)
-        {
-            tileSelection = tileSelectionObject.GetComponent<TileSelection>();
-        }
-        else
-        {
-            Debug.LogWarning("TileSelection not found. Ensure a GameObject with the 'TileSelection' tag exists in the scene.");
+            Debug.LogError("GameObjectLocator not found! Make sure it exists in the scene.", this);
         }
     }
 
@@ -66,78 +68,125 @@ public class GridMovementCharacter : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Handles all player movement inputs
+    /// </summary>
     private void HandleMovementInputs()
     {
-        if (!isMoving && Input.GetMouseButtonDown(0) && !tpMode)
-        {
-            if (EventSystem.current.IsPointerOverGameObject())
-            {
-                return;
-            }
-
-            if (TurnManager.Instance.PlayerTurn && player.CurrentActionPoints > 0)
-            {
-                targetPosition = tileSelection.GetHighlightedTileWorldPosition();
-                Vector2Int clickedTile = GridUtils.WorldToGrid(targetPosition);
-                Vector2Int playerGrid = GridUtils.WorldToGrid(transform.position);
-
-                // Check for enemy on clicked tile
-                Collider2D hit = Physics2D.OverlapPoint(targetPosition, LayerMask.GetMask("Enemy"));
-                EnemyHealth enemy = hit ? hit.GetComponent<EnemyHealth>() : null;
-
-                int dx = Mathf.Abs(clickedTile.x - playerGrid.x);
-                int dy = Mathf.Abs(clickedTile.y - playerGrid.y);
-
-                if (enemy != null)
-                {
-                    if ((dx + dy) == 1)
-                    {
-                        if (player.UseActionPoint())
-                        {
-                            FacePosition(enemy.transform.position);
-                            player.Attack(enemy);
-                        }
-                    }
-                    else
-                    {
-                        Debug.Log("Enemy must be adjacent to attack.");
-                    }
-                    return;
-                }
-
-                if (!obstacleTilemap.IsTileObstacle(clickedTile))
-                {
-                    if ((dx + dy) != 1)
-                    {
-                        Debug.Log("You can only move to adjacent tiles.");
-                        return;
-                    }
-
-                    if (player.UseActionPoint())
-                    {
-                        List<Vector2> path = new() { GridUtils.GridToWorld(clickedTile) };
-                        StartCoroutine(MoveAlongPath(path));
-                    }
-                    else
-                    {
-                        Debug.Log("Not enough Action Points!");
-                    }
-                }
-            }
-            else
-            {
-                Debug.Log("Not your turn or no action points.");
-            }
-        }
-
         if (isMoving)
         {
             MoveTowardsTarget();
+            return;
         }
 
-        if (Input.GetMouseButtonDown(0) && tpMode)
+        if (!Input.GetMouseButtonDown(0))
+            return;
+
+        if (tpMode)
         {
             TeleportToTile();
+            return;
+        }
+
+        HandleNormalMovement();
+    }
+
+    /// <summary>
+    /// Handles normal player movement (not teleport mode)
+    /// </summary>
+    private void HandleNormalMovement()
+    {
+        // Ignore clicks on UI
+        if (EventSystem.current.IsPointerOverGameObject())
+            return;
+
+        // Check if it's player's turn and has action points
+        if (!CanPlayerAct())
+        {
+            Debug.Log("Not your turn or no action points.");
+            return;
+        }
+
+        Vector2 targetPos = tileSelection.GetHighlightedTileWorldPosition();
+        Vector2Int clickedTile = GridUtils.WorldToGrid(targetPos);
+        Vector2Int playerGrid = GridUtils.WorldToGrid(transform.position);
+
+        // Check if click is on an adjacent tile
+        if (!IsAdjacentTile(clickedTile, playerGrid))
+        {
+            Debug.Log("You can only move to adjacent tiles.");
+            return;
+        }
+
+        // Check if there's an enemy on the clicked tile
+        EnemyHealth enemy = GetEnemyAtPosition(targetPos);
+        if (enemy != null)
+        {
+            HandleAttackAction(enemy);
+            return;
+        }
+
+        // Check if tile is passable
+        if (obstacleTilemap.IsTileObstacle(clickedTile))
+            return;
+
+        // Execute movement
+        HandleMovementAction(clickedTile);
+    }
+
+    /// <summary>
+    /// Checks if the player can act (turn and action points)
+    /// </summary>
+    private bool CanPlayerAct()
+    {
+        return TurnManager.Instance.PlayerTurn && player.CurrentActionPoints > 0;
+    }
+
+    /// <summary>
+    /// Checks if a tile is adjacent to the player
+    /// </summary>
+    private bool IsAdjacentTile(Vector2Int targetTile, Vector2Int playerTile)
+    {
+        int dx = Mathf.Abs(targetTile.x - playerTile.x);
+        int dy = Mathf.Abs(targetTile.y - playerTile.y);
+        return (dx + dy) == 1;
+    }
+
+    /// <summary>
+    /// Gets the enemy at a specific position
+    /// </summary>
+    private EnemyHealth GetEnemyAtPosition(Vector2 position)
+    {
+        Collider2D hit = Physics2D.OverlapPoint(position, LayerMask.GetMask("Enemy"));
+        return hit ? hit.GetComponent<EnemyHealth>() : null;
+    }
+
+    /// <summary>
+    /// Handles the attack action against an enemy
+    /// </summary>
+    private void HandleAttackAction(EnemyHealth enemy)
+    {
+        if (player.UseActionPoint())
+        {
+            FacePosition(enemy.transform.position);
+            player.Attack(enemy);
+        }
+    }
+
+    /// <summary>
+    /// Handles the movement action to a tile
+    /// </summary>
+    private void HandleMovementAction(Vector2Int targetTile)
+    {
+        if (player.UseActionPoint())
+        {
+            targetPosition = GridUtils.GridToWorld(targetTile);
+            List<Vector2> path = new() { targetPosition };
+            StartCoroutine(MoveAlongPath(path));
+        }
+        else
+        {
+            Debug.Log("Not enough Action Points!");
         }
     }
     private IEnumerator MoveAlongPath(List<Vector2> path)
