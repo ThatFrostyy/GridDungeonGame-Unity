@@ -1,4 +1,4 @@
-# 🧱 2D Grid-Based Trun-Based Dungeon Game (Unity)
+# 🧱 2D Grid-Based Turn-Based Dungeon Game (Unity)
 
 A 2D grid-based turn-based strategy game made with Unity. Inspired by classic tactics games and dungeon crawlers, this project features:
 
