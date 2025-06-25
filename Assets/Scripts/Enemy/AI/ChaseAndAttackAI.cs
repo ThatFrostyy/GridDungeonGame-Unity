@@ -11,7 +11,8 @@ public class ChaseAndAttackAI : EnemyAI
     [Header("Movement Settings")]
     [SerializeField] private float moveSpeed = 5f;
     [SerializeField] private int spotRange = 3;
-    [SerializeField] private float retreatHealth = 0.3f; // % of max health to trigger retreat
+    [Tooltip("Health percentage below which the enemy will retreat.")]
+    [Range(0f, 1f)] [SerializeField] private float retreatHealth = 0.3f;
     [SerializeField] private Vector2 gridSize = new(1f, 1f);
 
     [Header("Combat Settings")]

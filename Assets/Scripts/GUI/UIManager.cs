@@ -1,6 +1,7 @@
-using UnityEngine;
-using UnityEngine.UI;
 using TMPro;
+using UnityEngine;
+using UnityEngine.Tilemaps;
+using UnityEngine.UI;
 
 public class UIManager : MonoBehaviour
 {
@@ -25,24 +26,17 @@ public class UIManager : MonoBehaviour
             Destroy(gameObject);
         }
 
-        GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
-        if (playerObject != null)
+        if (GameObjectLocator.Instance != null)
         {
-            playerHealth = playerObject.GetComponent<PlayerHealth>();
+            playerHealth = GameObjectLocator.Instance.GetComponentByTag<PlayerHealth>("Player");
+
         }
         else
         {
-            Debug.LogError("Player object not found. Ensure the player has the 'Player' tag.");
+            Debug.LogError("GameObjectLocator not found! Make sure it exists in the scene.", this);
         }
-    }
 
-    private void Start()
-    {
-        if (playerHealth != null)
-        {
-            playerHealth.OnHealthChanged += UpdateHealthBar;
-            UpdateHealthBar(playerHealth.CurrentHealth, playerHealth.MaxHealth);
-        }
+        SetupPlayerHealthBar();
     }
 
     private void OnDestroy()
@@ -50,6 +44,18 @@ public class UIManager : MonoBehaviour
         if (playerHealth != null)
         {
             playerHealth.OnHealthChanged -= UpdateHealthBar;
+        }
+    }
+
+    /// <summary>
+    /// Sets up the player health bar if components are assigned
+    /// </summary>
+    private void SetupPlayerHealthBar()
+    {
+        if (playerHealth != null)
+        {
+            playerHealth.OnHealthChanged += UpdateHealthBar;
+            UpdateHealthBar(playerHealth.CurrentHealth, playerHealth.MaxHealth);
         }
     }
 

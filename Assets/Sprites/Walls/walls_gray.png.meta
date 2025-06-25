@@ -100,7 +100,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: walls_gray_0
+      name: Wall_GrassTL
       rect:
         serializedVersion: 2
         x: 0
@@ -122,7 +122,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: walls_gray_1
+      name: Wall_GrassT
       rect:
         serializedVersion: 2
         x: 256
@@ -144,7 +144,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: walls_gray_2
+      name: Wall_GrassTR
       rect:
         serializedVersion: 2
         x: 512
@@ -364,7 +364,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: walls_gray_12
+      name: Wall_GrassL
       rect:
         serializedVersion: 2
         x: 0
@@ -386,7 +386,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: walls_gray_13
+      name: Wall_GrassM
       rect:
         serializedVersion: 2
         x: 256
@@ -408,7 +408,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: walls_gray_14
+      name: Wall_GrassR
       rect:
         serializedVersion: 2
         x: 512
@@ -628,7 +628,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: walls_gray_24
+      name: Wall_GrassBL
       rect:
         serializedVersion: 2
         x: 0
@@ -650,10 +650,10 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: walls_gray_25
+      name: Wall_GrassB
       rect:
         serializedVersion: 2
-        x: 256
+        x: 252
         y: 1280
         width: 256
         height: 256
@@ -672,10 +672,10 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: walls_gray_26
+      name: Wall_GrassBR
       rect:
         serializedVersion: 2
-        x: 512
+        x: 508
         y: 1280
         width: 256
         height: 256
@@ -2234,26 +2234,27 @@ TextureImporter:
       Brick_Top: -1298181207
       Brick_TopLeft: -1331597264
       Brick_TopRight: -1560176518
-      walls_gray_0: 7719844763822353005
-      walls_gray_1: 1891087591
+      TWall_Grass: 7719844763822353005
+      Wall_GrassB: -1356078139
+      Wall_GrassBL: -2033024737
+      Wall_GrassBR: -2070749707
+      Wall_GrassL: -1978412582
+      Wall_GrassM: -1470777989
+      Wall_GrassR: 1517602051
+      Wall_GrassT: 1891087591
+      Wall_GrassTL: 7719844763822353005
+      Wall_GrassTR: 2068676870
       walls_gray_10: 472606686
       walls_gray_11: -1400091742
-      walls_gray_12: -1978412582
-      walls_gray_13: -1470777989
-      walls_gray_14: 1517602051
       walls_gray_15: 1729584455
       walls_gray_16: 1981214546
       walls_gray_17: -640645089
       walls_gray_18: 644369918
       walls_gray_19: -1884180224
-      walls_gray_2: 2068676870
       walls_gray_20: 693996764
       walls_gray_21: 941889499
       walls_gray_22: -252960538
       walls_gray_23: 1601983479
-      walls_gray_24: -2033024737
-      walls_gray_25: -1356078139
-      walls_gray_26: -2070749707
       walls_gray_27: 1167841821
       walls_gray_28: 1653772401
       walls_gray_29: 596754992

@@ -5,7 +5,7 @@ using UnityEngine;
 /// </summary>
 public class EnemyHealth : Health
 {
-    [Header("Enemy Specific")]
+    [Header("Enemy Health")]
     [SerializeField] private float destroyDelay = 0.1f;
     [SerializeField] private GameObject deathEffectPrefab;
 

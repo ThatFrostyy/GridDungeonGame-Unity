@@ -13,6 +13,7 @@ public class Enemy : ActionPointsComponent
     /// Gets the reference to the health component
     /// </summary>
     public EnemyHealth Health => health;
+    public EnemyHealthBar HealthBar => healthBar;
 
     /// <summary>
     /// Initializes action points and sets up health bar
@@ -21,21 +22,6 @@ public class Enemy : ActionPointsComponent
     {
         base.Awake();
         SetupHealthBar();
-    }
-
-    /// <summary>
-    /// Sets up the health bar if components are assigned
-    /// </summary>
-    private void SetupHealthBar()
-    {
-        if (health != null && healthBar != null)
-        {
-            healthBar.Setup(health, transform);
-        }
-        else if (healthBar != null)
-        {
-            Debug.LogWarning($"Enemy {name}: HealthBar assigned but Health component is missing!", this);
-        }
     }
 
     /// <summary>
@@ -51,6 +37,21 @@ public class Enemy : ActionPointsComponent
         get
         {
             return health != null ? health.HealthPercentage : 0f;
+        }
+    }
+
+    /// <summary>
+    /// Sets up the enemy health bar if components are assigned
+    /// </summary>
+    private void SetupHealthBar()
+    {
+        if (health != null && healthBar != null)
+        {
+            healthBar.Setup(health, transform);
+        }
+        else if (healthBar != null)
+        {
+            Debug.LogWarning($"Enemy {name}: HealthBar assigned but Health component is missing!", this);
         }
     }
 }

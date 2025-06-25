@@ -6,11 +6,12 @@ using UnityEngine;
 public class Player : ActionPointsComponent
 {
     [Header("Combat")]
-    [SerializeField] private Weapon equippedWeapon; // Null = unarmed
+    [Tooltip("Null = unarmed ")]
+    [SerializeField] private Weapon equippedWeapon;
 
     [Header("Weapon Settings")]
     [SerializeField] private Transform weaponHolder;
-    [SerializeField] private int unarmedDamage = 3;
+    [SerializeField] private int unarmedDamage = 20;
 
     [Header("References")]
     [SerializeField] private Animator animator;

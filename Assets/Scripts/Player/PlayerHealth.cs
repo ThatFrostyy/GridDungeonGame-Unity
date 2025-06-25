@@ -5,7 +5,7 @@ using UnityEngine;
 /// </summary>
 public class PlayerHealth : Health
 {
-    [Header("Player Specific")]
+    [Header("Player Health")]
     [SerializeField] private bool respawnOnDeath = false;
     [SerializeField] private Vector3 respawnPosition = Vector3.zero;
 

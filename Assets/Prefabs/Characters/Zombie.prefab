@@ -234,8 +234,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2c9e57f281ce04a46a9a0b2e8336608b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  fillImage: {fileID: 7447750830411912690}
-  healthText: {fileID: 5071295444424367205}
+  enemyHealthBarFill: {fileID: 7447750830411912690}
+  enemyHealthText: {fileID: 5071295444424367205}
   offset: {x: 0, y: 0, z: 0}
 --- !u!70 &748140098010958386
 CapsuleCollider2D:

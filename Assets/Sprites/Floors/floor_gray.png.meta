@@ -166,7 +166,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: floor_gray_3
+      name: Floor_GrassLowTL
       rect:
         serializedVersion: 2
         x: 768
@@ -188,7 +188,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: floor_gray_4
+      name: Floor_GrassLowT
       rect:
         serializedVersion: 2
         x: 1024
@@ -210,7 +210,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: floor_gray_5
+      name: Floor_GrassLowTR
       rect:
         serializedVersion: 2
         x: 1280
@@ -364,7 +364,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: floor_gray_12
+      name: Floor_GrassLowL
       rect:
         serializedVersion: 2
         x: 768
@@ -386,7 +386,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: floor_gray_13
+      name: Floor_GrassLowM
       rect:
         serializedVersion: 2
         x: 1024
@@ -408,7 +408,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: floor_gray_14
+      name: Floor_GrassLowR
       rect:
         serializedVersion: 2
         x: 1280
@@ -562,7 +562,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: floor_gray_21
+      name: Floor_GrassLowBL
       rect:
         serializedVersion: 2
         x: 768
@@ -584,7 +584,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: floor_gray_22
+      name: Floor_GrassLowB
       rect:
         serializedVersion: 2
         x: 1024
@@ -606,7 +606,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: floor_gray_23
+      name: Floor_GrassLowBR
       rect:
         serializedVersion: 2
         x: 1280
@@ -1310,13 +1310,19 @@ TextureImporter:
       Floor_BrickTop: 593112116
       Floor_BrickTopLeft: -1963022264
       Floor_BrickTopRight: 378176046
+      Floor_GrassLowB: 1403757586
+      Floor_GrassLowBL: -2105888116
+      Floor_GrassLowBR: -1682858038
+      Floor_GrassLowL: -1918787613
+      Floor_GrassLowM: 761791579
+      Floor_GrassLowR: -898599722
+      Floor_GrassLowT: 366108622
+      Floor_GrassLowTL: 2092112004
+      Floor_GrassLowTR: 1816063982
       floor_gray_0: 6634066359456739453
       floor_gray_1: 931657415
       floor_gray_10: 840428482
       floor_gray_11: -1332091844
-      floor_gray_12: -1918787613
-      floor_gray_13: 761791579
-      floor_gray_14: -898599722
       floor_gray_15: -704786961
       floor_gray_16: -645144887
       floor_gray_17: 148148590
@@ -1324,13 +1330,9 @@ TextureImporter:
       floor_gray_19: -1331203738
       floor_gray_2: -827161769
       floor_gray_20: 1133449790
-      floor_gray_21: -2105888116
-      floor_gray_22: 1403757586
-      floor_gray_23: -1682858038
       floor_gray_24: 1063104992
       floor_gray_25: 1352819762
       floor_gray_26: 2039743864
-      floor_gray_3: 2092112004
       floor_gray_30: -13608206
       floor_gray_31: -1898949726
       floor_gray_32: 165062651
@@ -1338,7 +1340,6 @@ TextureImporter:
       floor_gray_34: 1359152434
       floor_gray_35: -291096381
       floor_gray_39: -514856286
-      floor_gray_4: 366108622
       floor_gray_40: 446416181
       floor_gray_41: 504255945
       floor_gray_42: -237474249
@@ -1346,7 +1347,6 @@ TextureImporter:
       floor_gray_44: -1177309106
       floor_gray_48: 635259029
       floor_gray_49: 1580391067
-      floor_gray_5: 1816063982
       floor_gray_50: 416171685
       floor_gray_51: 297398240
       floor_gray_52: -59473894

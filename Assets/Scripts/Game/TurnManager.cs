@@ -8,6 +8,7 @@ using UnityEngine.UI;
 public class TurnManager : MonoBehaviour
 {
     [Header("Settings")]
+    [Tooltip("Delay between enemy actions.")]
     [SerializeField] private float enemyActionDelay = 0.5f; 
 
     [Header("References")]

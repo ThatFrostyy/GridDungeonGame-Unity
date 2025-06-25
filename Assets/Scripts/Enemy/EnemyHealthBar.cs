@@ -1,20 +1,26 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 
 public class EnemyHealthBar : MonoBehaviour
 {
-    [SerializeField] private Image fillImage;
-    [SerializeField] private TMP_Text healthText;
+    [SerializeField] private Image enemyHealthBarFill;
+    [SerializeField] private TMP_Text enemyHealthText;
     [SerializeField] private Vector3 offset = new(0, 0, 0);
+    
+    private Transform target;   
 
-    private Transform target;
-
+    /// <summary>
+    /// Sets up the enemy health bar if components are assigned
+    /// </summary>
     public void Setup(EnemyHealth health, Transform targetTransform)
     {
-        target = targetTransform;
-        health.OnHealthChanged += UpdateBar;
-        UpdateBar(health.CurrentHealth, health.MaxHealth);
+        if (health != null && targetTransform != null)
+        {
+            target = targetTransform;
+            health.OnHealthChanged += UpdateBar;
+            UpdateBar(health.CurrentHealth, health.MaxHealth);
+        }
     }
 
     private void LateUpdate()
@@ -28,13 +34,10 @@ public class EnemyHealthBar : MonoBehaviour
 
     private void UpdateBar(int current, int max)
     {
-        if (fillImage != null)
+        if (enemyHealthBarFill != null)
         {
-            fillImage.fillAmount = (float)current / max;
-        }
-        if (healthText != null)
-        {
-            healthText.text = $"{current}/{max}";
+            enemyHealthBarFill.fillAmount = (float)current / max;
+            enemyHealthText.text = $"{current}/{max}";
         }
     }
 }
