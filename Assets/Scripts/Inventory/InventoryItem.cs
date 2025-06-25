@@ -3,10 +3,13 @@ using UnityEngine;
 [CreateAssetMenu(menuName = "Inventory/Item")]
 public class InventoryItem : ScriptableObject
 {
+    [Header("Item Settings")]
     public string itemName;
     public Sprite icon;
     public ItemType itemType;
-    public GameObject prefab;
+
+    [Header("Item Data")]
+    [Tooltip("ONLY set for Weapon item types!")]
     public Weapon weaponData;
 }
 

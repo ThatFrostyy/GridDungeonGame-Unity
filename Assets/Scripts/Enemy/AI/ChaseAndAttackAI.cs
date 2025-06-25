@@ -69,7 +69,6 @@ public class ChaseAndAttackAI : EnemyAI
         }
     }
 
-
     /// <summary>
     /// Attempts to perform a single AI action: patrol, retreat, chase, or attack.
     /// </summary>
@@ -79,33 +78,25 @@ public class ChaseAndAttackAI : EnemyAI
         if (isMoving || player == null || enemy == null || enemyHealth == null)
             return false;
 
-        Vector2Int enemyGrid = GridUtils.WorldToGrid(transform.position);
-        Vector2Int playerGrid = GridUtils.WorldToGrid(player.transform.position);
-        int gridDistance = Mathf.Abs(enemyGrid.x - playerGrid.x) + Mathf.Abs(enemyGrid.y - playerGrid.y);
+        Vector2Int e = GridUtils.WorldToGrid(transform.position);
+        Vector2Int p = GridUtils.WorldToGrid(player.transform.position);
+        int dist = Mathf.Abs(e.x - p.x) + Mathf.Abs(e.y - p.y);
 
-        if (gridDistance > spotRange)
-        {
-            bool didPatrol = Patrol();
-            return didPatrol;
-        }
+        if (dist > spotRange)
+            return Patrol();
 
         if (enemyHealth.HealthPercentage < retreatHealth)
-        {
-            bool didRetreat = Retreat();
-            return didRetreat;
-        }
+            return Retreat();
 
-        if (IsAdjacent(enemyGrid, playerGrid))
+        if (IsWithinAttackRange(e, p))
         {
             AttackPlayer();
             return true;
         }
-        else
-        {
-            bool didMove = TryMoveTowardsPlayer(playerGrid);
-            return didMove;
-        }
+
+        return TryMoveTowardsPlayer(p);
     }
+
 
     /// <summary>
     /// Patrols randomly to a nearby tile if possible.
@@ -216,12 +207,12 @@ public class ChaseAndAttackAI : EnemyAI
     /// <param name="a">First grid position.</param>
     /// <param name="b">Second grid position.</param>
     /// <returns>True if adjacent, otherwise false.</returns>
-    private bool IsAdjacent(Vector2Int a, Vector2Int b)
+    private bool IsWithinAttackRange(Vector2Int a, Vector2Int b)
     {
-        int dx = Mathf.Abs(a.x - b.x);
-        int dy = Mathf.Abs(a.y - b.y);
-        return (dx + dy) == 1;
+        int dist = Mathf.Abs(a.x - b.x) + Mathf.Abs(a.y - b.y);
+        return dist <= attackRange;
     }
+
 
     /// <summary>
     /// Moves the enemy along a path to the specified position.

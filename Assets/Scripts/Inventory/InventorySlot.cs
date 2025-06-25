@@ -1,12 +1,38 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Tilemaps;
 
 public class InventorySlot : MonoBehaviour, IDropHandler
 {
     [SerializeField] private ItemType allowedType = ItemType.Generic;
 
     private InventoryItemUI currentItemUI;
+    private Player player;
+
     public InventoryItemUI CurrentItemUI => currentItemUI;
+
+    /// <summary>
+    /// Initializes references using the GameObjectLocator
+    /// </summary>
+    private void Awake()
+    {
+        InitializeReferences();
+    }
+
+    /// <summary>
+    /// Gets necessary references from the GameObjectLocator
+    /// </summary>
+    private void InitializeReferences()
+    {
+        if (GameObjectLocator.Instance != null)
+        {
+            player = GameObjectLocator.Instance.Player;
+        }
+        else
+        {
+            Debug.LogError("GameObjectLocator not found! Make sure it exists in the scene.", this);
+        }
+    }
 
     public void SetCurrentItemUI(InventoryItemUI itemUI)
     {
@@ -22,13 +48,8 @@ public class InventorySlot : MonoBehaviour, IDropHandler
             return;
         }
 
-        // If dragging from weapon slot to a non-weapon slot, unequip
-        if (draggedItem.OriginalSlot != null &&
-            draggedItem.OriginalSlot.allowedType == ItemType.Weapon &&
-            allowedType != ItemType.Weapon &&
-            draggedItem.Item.itemType == ItemType.Weapon)
+        if (draggedItem.OriginalSlot != null && draggedItem.OriginalSlot.allowedType == ItemType.Weapon && allowedType != ItemType.Weapon && draggedItem.Item.itemType == ItemType.Weapon)
         {
-            var player = FindFirstObjectByType<Player>();
             if (player != null)
             {
                 player.UnequipWeapon();
@@ -40,7 +61,10 @@ public class InventorySlot : MonoBehaviour, IDropHandler
             var weapon = draggedItem.Item.weaponData;
             if (weapon != null)
             {
-                FindFirstObjectByType<Player>().EquipWeapon(weapon);
+                if (player != null)
+                {
+                    player.EquipWeapon(weapon);
+                }
             }
         }
 
@@ -77,7 +101,6 @@ public class InventorySlot : MonoBehaviour, IDropHandler
     {
         if (allowedType == ItemType.Weapon)
         {
-            var player = FindFirstObjectByType<Player>();
             if (player != null)
             {
                 player.UnequipWeapon();

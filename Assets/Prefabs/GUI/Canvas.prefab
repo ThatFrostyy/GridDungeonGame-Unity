@@ -2067,6 +2067,7 @@ MonoBehaviour:
   inventorySlots:
   - {fileID: 4577423899571771813}
   - {fileID: 6616775461815058831}
+  - {fileID: 8163044895878793034}
   - {fileID: 7111868041972562508}
   - {fileID: 9172898773585535974}
   - {fileID: 4612523953547625103}
@@ -2088,7 +2089,8 @@ MonoBehaviour:
   itemUIPrefab: {fileID: 7888221409070537629, guid: 07840c93f5d2e08469dbb40ced9419cf, type: 3}
   isTesting: 1
   testItem: {fileID: 11400000, guid: 7ec646e5127c1a44a8e805fe872b6905, type: 2}
-  testItem1: {fileID: 11400000, guid: 7ec646e5127c1a44a8e805fe872b6905, type: 2}
+  testItem1: {fileID: 11400000, guid: 69c53093d607f384f9325409c6b2a9b8, type: 2}
+  testItem2: {fileID: 11400000, guid: 9dbc6bd8acffc744fbd2a3f56250acec, type: 2}
 --- !u!1 &7747885268392747648
 GameObject:
   m_ObjectHideFlags: 0

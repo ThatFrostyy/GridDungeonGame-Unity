@@ -111,18 +111,18 @@ public class GridMovementCharacter : MonoBehaviour
         Vector2Int clickedTile = GridUtils.WorldToGrid(targetPos);
         Vector2Int playerGrid = GridUtils.WorldToGrid(transform.position);
 
-        // Check if click is on an adjacent tile
-        if (!IsAdjacentTile(clickedTile, playerGrid))
-        {
-            Debug.Log("You can only move to adjacent tiles.");
-            return;
-        }
-
         // Check if there's an enemy on the clicked tile
         EnemyHealth enemy = GetEnemyAtPosition(targetPos);
         if (enemy != null)
         {
             HandleAttackAction(enemy);
+            return;
+        }
+
+        // Check if click is on an adjacent tile
+        if (!IsAdjacentTile(clickedTile, playerGrid))
+        {
+            Debug.Log("You can only move to adjacent tiles.");
             return;
         }
 
@@ -166,11 +166,8 @@ public class GridMovementCharacter : MonoBehaviour
     /// </summary>
     private void HandleAttackAction(EnemyHealth enemy)
     {
-        if (player.UseActionPoint())
-        {
-            FacePosition(enemy.transform.position);
-            player.Attack(enemy);
-        }
+         FacePosition(enemy.transform.position);
+         player.Attack(enemy);
     }
 
     /// <summary>

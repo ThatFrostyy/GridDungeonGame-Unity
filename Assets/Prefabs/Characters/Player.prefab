@@ -194,6 +194,8 @@ MonoBehaviour:
   hitEffectPrefab: {fileID: 6823200998282874702, guid: 8f8fe12323625f5499b2853dd2ad3e58, type: 3}
   flickerDuration: 0.3
   flickerCount: 3
+  respawnOnDeath: 0
+  respawnPosition: {x: 0, y: 0, z: 0}
 --- !u!114 &99105893937931994
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -209,12 +211,12 @@ MonoBehaviour:
   maxActionPoints: 3
   currentActionPoints: 0
   equippedWeapon: {fileID: 0}
+  weaponHolder: {fileID: 7270358481538735555}
   unarmedDamage: 20
-  unarmedAttackSound: {fileID: 8300000, guid: 619fd737a9acb4b4da7536ae389683a2, type: 3}
+  playerAttackRange: 1
   animator: {fileID: 7293422589366871731}
   audioSource: {fileID: 5296419531537509862}
-  weaponHolder: {fileID: 7270358481538735555}
-  defaultController: {fileID: 9100000, guid: 7144a9860a35e054d9b3e383b4a7d0b5, type: 2}
+  unarmedAttackSound: {fileID: 8300000, guid: 619fd737a9acb4b4da7536ae389683a2, type: 3}
 --- !u!82 &5296419531537509862
 AudioSource:
   m_ObjectHideFlags: 0

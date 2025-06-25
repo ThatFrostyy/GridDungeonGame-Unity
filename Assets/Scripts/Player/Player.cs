@@ -1,4 +1,5 @@
 using UnityEngine;
+using static Weapon;
 
 /// <summary>
 /// Main player component that handles combat and equipment
@@ -12,6 +13,8 @@ public class Player : ActionPointsComponent
     [Header("Weapon Settings")]
     [SerializeField] private Transform weaponHolder;
     [SerializeField] private int unarmedDamage = 20;
+    [Tooltip("Range for unarmed attacks")]
+    [SerializeField] private int playerAttackRange = 1;
 
     [Header("References")]
     [SerializeField] private Animator animator;
@@ -71,12 +74,32 @@ public class Player : ActionPointsComponent
             return;
         }
 
-        int damage = CalculateAttackDamage();
-        AudioClip attackClip = GetAttackSound();
+        Vector2Int playerGrid = GridUtils.WorldToGrid(transform.position);
+        Vector2Int enemyGrid = GridUtils.WorldToGrid(enemy.transform.position);
 
-        PlayAttackAnimation();
-        PlayAttackSound(attackClip);
-        ApplyDamageToEnemy(enemy, damage);
+        int manhattanDistance = Mathf.Abs(playerGrid.x - enemyGrid.x) + Mathf.Abs(playerGrid.y - enemyGrid.y);
+        int effectiveRange = equippedWeapon != null ? equippedWeapon.attackRange : playerAttackRange;
+
+        if (manhattanDistance <= effectiveRange)
+        {
+            if (UseActionPoint())
+            {
+                int damage = CalculateAttackDamage();
+                AudioClip attackClip = GetAttackSound();
+
+                PlayAttackAnimation();
+                PlayAttackSound(attackClip);
+                ApplyDamageToEnemy(enemy, damage);
+            }
+            else
+            {
+                Debug.Log("Not enough Action Points!");
+            }
+        }
+        else
+        {
+            Debug.Log("Enemy is out of attack range.");
+        }
     }
 
     /// <summary>
@@ -180,25 +203,8 @@ public class Player : ActionPointsComponent
     {
         if (animator != null)
         {
-            int weaponType = GetWeaponTypeInt(weapon);
+            int weaponType = (int)(weapon != null ? weapon.type : WeaponType.None);
             animator.SetInteger("WeaponType", weaponType);
         }
-    }
-
-    /// <summary>
-    /// Converts weapon type to integer for animator
-    /// </summary>
-    /// <param name="weapon">Weapon to convert</param>
-    /// <returns>0 = no weapon, 1 = sword, etc.</returns>
-    private int GetWeaponTypeInt(Weapon weapon)
-    {
-        if (weapon == null) return 0; // No weapon
-        
-        // TODO: Use enums or dictionary for more scalable mapping
-        return weapon.weaponName switch
-        {
-            "Sword" => 1,
-            _ => 0
-        };
     }
 }

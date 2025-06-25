@@ -3,11 +3,11 @@ using UnityEngine;
 public class InventoryManager : MonoBehaviour
 {
     [Header("Inventory Slots")]
-    public InventorySlot[] inventorySlots;
-    public InventorySlot headSlot;
-    public InventorySlot bodySlot;
-    public InventorySlot weaponSlot;
-    public InventorySlot shieldSlot;
+    [SerializeField] private InventorySlot[] inventorySlots;
+    [SerializeField] private InventorySlot headSlot;
+    [SerializeField] private InventorySlot bodySlot;
+    [SerializeField] private InventorySlot weaponSlot;
+    [SerializeField] private InventorySlot shieldSlot;
     [SerializeField] private GameObject inventoryUI; 
 
     [Header("Prefabs")]
@@ -17,6 +17,7 @@ public class InventoryManager : MonoBehaviour
     [SerializeField] private bool isTesting = false;
     [SerializeField] private InventoryItem testItem;
     [SerializeField] private InventoryItem testItem1;
+    [SerializeField] private InventoryItem testItem2;
 
     private void Awake()
     {
@@ -24,6 +25,7 @@ public class InventoryManager : MonoBehaviour
         {
             AddItemToInventory(testItem);
             AddItemToInventory(testItem1);
+            AddItemToInventory(testItem2);
         }
     }
 
