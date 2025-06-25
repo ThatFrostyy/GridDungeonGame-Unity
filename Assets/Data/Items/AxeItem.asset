@@ -15,4 +15,4 @@ MonoBehaviour:
   itemName: Axe
   icon: {fileID: 698664279297640794, guid: e87d3c5cd4484d84c9dc9f4b2dd0b4e7, type: 3}
   itemType: 3
-  weaponData: {fileID: 11400000, guid: c4baa286dcc688b40aa7cb3804decf61, type: 2}
+  weaponData: {fileID: 11400000, guid: 6a6895aba13bc234e8c200dc3b339123, type: 2}

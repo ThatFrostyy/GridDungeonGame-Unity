@@ -16,5 +16,5 @@ MonoBehaviour:
   type: 2
   damage: 40
   attackRange: 2
-  attackSound: {fileID: 0}
   prefab: {fileID: 7497010806972904354, guid: 193142a4a212c3340b27a11421322d4c, type: 3}
+  attackSound: {fileID: 8300000, guid: ea6fe59094f8c214c9c0488e0ea9b45b, type: 3}
