@@ -14,5 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemName: Spear
   icon: {fileID: -5557420877203330147, guid: e87d3c5cd4484d84c9dc9f4b2dd0b4e7, type: 3}
-  itemType: 3
+  itemType: 2
+  armorData: {fileID: 0}
   weaponData: {fileID: 11400000, guid: 9e32362c291d3fe45b18be1a1e118684, type: 2}

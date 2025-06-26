@@ -17,7 +17,11 @@ public class ChaseAndAttackAI : EnemyAI
 
     [Header("Combat Settings")]
     [SerializeField] private int attackDamage = 20;
-    [SerializeField] private int attackRange = 1; // Not used yet
+    [SerializeField] private int attackRange = 1; 
+    [Range(0f, 1f)][SerializeField] private float critChance = 0.2f;
+    [SerializeField] private float critMultiplier = 1.5f;
+    [SerializeField] private AudioClip critSound;
+
 
     [Header("Sprite Settings")]
     [SerializeField] private Animator animator;
@@ -251,24 +255,36 @@ public class ChaseAndAttackAI : EnemyAI
     /// </summary>
     private void AttackPlayer()
     {
-        if (player != null)
+        if (player == null || playerHealth == null) return;
+
+        int finalDamage = attackDamage;
+        bool isCrit = Random.value < critChance;
+
+        if (isCrit)
         {
-            if (playerHealth != null)
-            {
-                playerHealth.TakeDamage(attackDamage);
-            }
+            finalDamage = Mathf.RoundToInt(attackDamage * critMultiplier);
+            Debug.Log($"CRITICAL HIT! Dealt {finalDamage} damage.");
 
-            if (animator != null)
+            if (audioSource != null && critSound != null)
             {
-                animator.SetTrigger("Attack");
+                audioSource.PlayOneShot(critSound);
             }
-
+        }
+        else
+        {
             if (audioSource != null && attackSound != null)
             {
                 audioSource.pitch = Random.Range(0.8f, 1.2f);
                 audioSource.PlayOneShot(attackSound);
                 audioSource.pitch = 1f;
             }
+        }
+
+        playerHealth.TakeDamage(finalDamage);
+
+        if (animator != null)
+        {
+            animator.SetTrigger("Attack");
         }
     }
 

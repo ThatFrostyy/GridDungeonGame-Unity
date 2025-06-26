@@ -1897,6 +1897,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3538195840686379068, guid: faef5ec70b13fc84ea17bd687af453eb, type: 3}
+      propertyPath: floatingDamageText
+      value: 
+      objectReference: {fileID: 1692624023946596405, guid: ec31fde37907de44bafc56a03b87721c, type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2330,6 +2334,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Canvas
       objectReference: {fileID: 0}
+    - target: {fileID: 7492503189722418685, guid: 41a64b0fe63ab014e96b6d063c060588, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7935209349339452655, guid: 41a64b0fe63ab014e96b6d063c060588, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -2436,13 +2444,9 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8202765719025049396, guid: d10aec057bc5f6d42928d8370e5e030a, type: 3}
-      propertyPath: maxHealth
-      value: 1000
-      objectReference: {fileID: 0}
-    - target: {fileID: 8202765719025049396, guid: d10aec057bc5f6d42928d8370e5e030a, type: 3}
-      propertyPath: deathEffectPrefab
+      propertyPath: floatingDamageText
       value: 
-      objectReference: {fileID: 4553287630450876385, guid: 15483e51212e3d74886ea57291f4639a, type: 3}
+      objectReference: {fileID: 1692624023946596405, guid: ec31fde37907de44bafc56a03b87721c, type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

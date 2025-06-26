@@ -196,6 +196,7 @@ MonoBehaviour:
   flickerCount: 3
   respawnOnDeath: 0
   respawnPosition: {x: 0, y: 0, z: 0}
+  player: {fileID: 99105893937931994}
 --- !u!114 &99105893937931994
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -214,6 +215,9 @@ MonoBehaviour:
   weaponHolder: {fileID: 7270358481538735555}
   unarmedDamage: 20
   playerAttackRange: 1
+  helmetHolder: {fileID: 763717982727669162}
+  chestplateHolder: {fileID: 6285064408536784245}
+  shieldHolder: {fileID: 4802298671206930065}
   animator: {fileID: 7293422589366871731}
   audioSource: {fileID: 5296419531537509862}
   unarmedAttackSound: {fileID: 8300000, guid: 619fd737a9acb4b4da7536ae389683a2, type: 3}
@@ -389,7 +393,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: -1917415125
   m_SortingLayer: 1
-  m_SortingOrder: 0
+  m_SortingOrder: -1
   m_Sprite: {fileID: 4922134458851713345, guid: ccffbf21296ac6248affa4c6ac304d92, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -651,7 +655,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: -1917415125
   m_SortingLayer: 1
-  m_SortingOrder: -1
+  m_SortingOrder: -2
   m_Sprite: {fileID: -6076454553565838501, guid: ccffbf21296ac6248affa4c6ac304d92, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0

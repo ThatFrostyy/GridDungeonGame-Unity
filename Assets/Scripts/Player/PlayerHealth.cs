@@ -9,6 +9,24 @@ public class PlayerHealth : Health
     [SerializeField] private bool respawnOnDeath = false;
     [SerializeField] private Vector3 respawnPosition = Vector3.zero;
 
+    [Header("References")]
+    [SerializeField] private Player player;
+
+    /// <summary>
+    /// Modifies incoming damage based on equipped armor
+    /// </summary>
+    /// <param name="damage">Recived damage</param>
+    protected override int ModifyIncomingDamage(int damage)
+    {
+        int totalProtection = 0;
+        foreach (var armor in player.EquippedArmor.Values)
+        {
+            totalProtection += armor.protection;
+        }
+
+        return Mathf.Max(damage - totalProtection, 0);
+    }
+
     /// <summary>
     /// Handles player death
     /// </summary>

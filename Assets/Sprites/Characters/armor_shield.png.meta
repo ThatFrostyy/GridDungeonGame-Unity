@@ -66,7 +66,7 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 100
+  spritePixelsToUnits: 256
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -90,7 +90,7 @@ TextureImporter:
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 1
+    textureCompression: 0
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -115,7 +115,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: armor_shield_0
+      name: Steel_Body
       rect:
         serializedVersion: 2
         x: 64
@@ -123,7 +123,7 @@ TextureImporter:
         width: 128
         height: 176
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -137,7 +137,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: armor_shield_1
+      name: Copper_Body
       rect:
         serializedVersion: 2
         x: 326
@@ -145,7 +145,7 @@ TextureImporter:
         width: 128
         height: 176
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -159,7 +159,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: armor_shield_2
+      name: Gold_Body
       rect:
         serializedVersion: 2
         x: 576
@@ -167,7 +167,7 @@ TextureImporter:
         width: 128
         height: 176
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -181,15 +181,15 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: armor_shield_3
+      name: Steel_Shield
       rect:
         serializedVersion: 2
-        x: 59
+        x: 58
         y: 59
         width: 138
         height: 137
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -203,7 +203,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: armor_shield_4
+      name: Copper_Shield
       rect:
         serializedVersion: 2
         x: 321
@@ -211,7 +211,7 @@ TextureImporter:
         width: 138
         height: 137
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -225,7 +225,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: armor_shield_5
+      name: Gold_Shield
       rect:
         serializedVersion: 2
         x: 571
@@ -233,7 +233,7 @@ TextureImporter:
         width: 138
         height: 137
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -250,7 +250,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 5aef16eecc70b8e4db242cba924f5ad0
     internalID: 0
     vertices: []
     indices: 
@@ -260,12 +260,12 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      armor_shield_0: -6194891623262276386
-      armor_shield_1: 3593445139043035854
-      armor_shield_2: -236357828550294605
-      armor_shield_3: -3243327769007145581
-      armor_shield_4: -3251946748263349202
-      armor_shield_5: 8405998691779262473
+      Copper_Body: 3593445139043035854
+      Copper_Shield: -3251946748263349202
+      Gold_Body: -236357828550294605
+      Gold_Shield: 8405998691779262473
+      Steel_Body: -6194891623262276386
+      Steel_Shield: -3243327769007145581
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

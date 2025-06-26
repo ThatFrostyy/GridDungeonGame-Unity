@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using static Weapon;
 
@@ -15,6 +16,11 @@ public class Player : ActionPointsComponent
     [SerializeField] private int unarmedDamage = 20;
     [Tooltip("Range for unarmed attacks")]
     [SerializeField] private int playerAttackRange = 1;
+    
+    [Header("Armor Settings")]
+    [SerializeField] private Transform helmetHolder;
+    [SerializeField] private Transform chestplateHolder;
+    [SerializeField] private Transform shieldHolder;
 
     [Header("References")]
     [SerializeField] private Animator animator;
@@ -24,6 +30,10 @@ public class Player : ActionPointsComponent
     [SerializeField] private AudioClip unarmedAttackSound;
 
     private GameObject equippedWeaponObject;
+    private Dictionary<Armor.ArmorType, Armor> equippedArmor = new();
+    private Dictionary<Armor.ArmorType, GameObject> equippedArmorObjectMap = new();
+
+    public Dictionary<Armor.ArmorType, Armor> EquippedArmor => equippedArmor;
 
     /// <summary>
     /// Initializes action points and subscribes to events
@@ -184,6 +194,57 @@ public class Player : ActionPointsComponent
         {
             Destroy(equippedWeaponObject);
             equippedWeaponObject = null;
+        }
+    }
+
+    public void EquipArmor(Armor armor)
+    {
+        if (armor == null) return;
+
+        Armor.ArmorType slot = armor.type;
+
+        // Replace existing armor in this slot
+        if (equippedArmor.ContainsKey(slot))
+        {
+            equippedArmor[slot] = armor;
+        }
+        else
+        {
+            equippedArmor.Add(slot, armor);
+        }
+
+        // Visual instantiation
+        Transform parent = GetArmorHolder(slot);
+        if (parent != null && armor.prefab != null)
+        {
+            GameObject armorObj = Instantiate(armor.prefab, parent);
+            armorObj.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+            equippedArmorObjectMap[slot] = armorObj;
+        }
+    }
+
+    private Transform GetArmorHolder(Armor.ArmorType type)
+    {
+        return type switch
+        {
+            Armor.ArmorType.Helmet => helmetHolder,
+            Armor.ArmorType.Chestplate => chestplateHolder,
+            Armor.ArmorType.Shield => shieldHolder,
+            _ => transform
+        };
+    }
+
+    public void UnequipArmor(Armor.ArmorType type)
+    {
+        if (equippedArmor.ContainsKey(type))
+        {
+            equippedArmor.Remove(type);
+
+            if (equippedArmorObjectMap.ContainsKey(type))
+            {
+                Destroy(equippedArmorObjectMap[type]);
+                equippedArmorObjectMap.Remove(type);
+            }
         }
     }
 

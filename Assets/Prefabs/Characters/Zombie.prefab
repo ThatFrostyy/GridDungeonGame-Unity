@@ -215,13 +215,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e8bc8df32c492a547bad9bde982fb789, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 100
+  maxHealth: 1000
   currentHealth: 0
   hitEffectPrefab: {fileID: 6823200998282874702, guid: 8f8fe12323625f5499b2853dd2ad3e58, type: 3}
   flickerDuration: 0.3
   flickerCount: 3
   destroyDelay: 0.1
-  deathEffectPrefab: {fileID: 0}
+  deathEffectPrefab: {fileID: 4553287630450876385, guid: 15483e51212e3d74886ea57291f4639a, type: 3}
 --- !u!114 &4879267033883145590
 MonoBehaviour:
   m_ObjectHideFlags: 0

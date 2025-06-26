@@ -9,6 +9,8 @@ public class InventoryItem : ScriptableObject
     public ItemType itemType;
 
     [Header("Item Data")]
+    [Tooltip("ONLY set for Armor item types!")]
+    public Armor armorData;
     [Tooltip("ONLY set for Weapon item types!")]
     public Weapon weaponData;
 }
@@ -16,8 +18,6 @@ public class InventoryItem : ScriptableObject
 public enum ItemType
 {
     Generic,
-    HeadArmor,
-    BodyArmor,
-    Weapon,
-    Shield
+    Armor,
+    Weapon
 }

@@ -17,6 +17,7 @@ public abstract class Health : MonoBehaviour
     [SerializeField] protected GameObject hitEffectPrefab;
     [SerializeField] protected float flickerDuration = 0.3f;
     [SerializeField] protected int flickerCount = 3;
+    [SerializeField] GameObject floatingDamageText;
 
     protected List<SpriteRenderer> spriteRenderers;
 
@@ -64,16 +65,29 @@ public abstract class Health : MonoBehaviour
     {
         if (amount <= 0) return;
 
-        currentHealth = Mathf.Max(currentHealth - amount, 0);
+        // Call the modifier hook before applying damage
+        int modifiedDamage = ModifyIncomingDamage(amount);
+
+        currentHealth = Mathf.Max(currentHealth - modifiedDamage, 0);
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
 
-        SpawnHitEffect();
+        SpawnHitEffect(modifiedDamage);
         PlayFlickerEffect();
 
         if (currentHealth == 0)
         {
             Die();
         }
+    }
+
+    /// <summary>
+    /// Allows derived classes to modify incoming damage (e.g., for armor)
+    /// </summary>
+    /// <param name="damage">Original damage</param>
+    /// <returns>Modified damage to apply</returns>
+    protected virtual int ModifyIncomingDamage(int damage)
+    {
+        return damage; // By default, no modification
     }
 
     /// <summary>
@@ -110,12 +124,15 @@ public abstract class Health : MonoBehaviour
     /// <summary>
     /// Spawns the hit effect visual
     /// </summary>
-    protected virtual void SpawnHitEffect()
+    protected virtual void SpawnHitEffect(int damage)
     {
         if (hitEffectPrefab != null)
         {
             Instantiate(hitEffectPrefab, transform.position, Quaternion.identity);
         }
+
+        GameObject text = Instantiate(floatingDamageText, transform.position, Quaternion.identity);
+        text.transform.GetChild(0).GetComponent<TextMesh>().text = damage.ToString();
     }
 
     /// <summary>

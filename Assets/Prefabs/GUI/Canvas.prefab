@@ -89,6 +89,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   allowedType: 0
+  allowedArmorType: 0
+  enforceArmorType: 0
 --- !u!1 &267874170226594343
 GameObject:
   m_ObjectHideFlags: 0
@@ -253,6 +255,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   allowedType: 1
+  allowedArmorType: 0
+  enforceArmorType: 1
 --- !u!1 &1017804251676644201
 GameObject:
   m_ObjectHideFlags: 0
@@ -341,7 +345,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1403309aad520ae48a7bffbae3a070b3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  allowedType: 2
+  allowedType: 1
+  allowedArmorType: 1
+  enforceArmorType: 1
 --- !u!1 &1501185137104498085
 GameObject:
   m_ObjectHideFlags: 0
@@ -431,6 +437,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   allowedType: 0
+  allowedArmorType: 0
+  enforceArmorType: 0
 --- !u!1 &1896713822341174990
 GameObject:
   m_ObjectHideFlags: 0
@@ -520,6 +528,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   allowedType: 0
+  allowedArmorType: 0
+  enforceArmorType: 0
 --- !u!1 &2481800973872258477
 GameObject:
   m_ObjectHideFlags: 0
@@ -609,6 +619,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   allowedType: 0
+  allowedArmorType: 0
+  enforceArmorType: 0
 --- !u!1 &2931782037983178266
 GameObject:
   m_ObjectHideFlags: 0
@@ -734,7 +746,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1403309aad520ae48a7bffbae3a070b3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  allowedType: 3
+  allowedType: 2
+  allowedArmorType: 0
+  enforceArmorType: 0
 --- !u!1 &3924894707946804570
 GameObject:
   m_ObjectHideFlags: 0
@@ -977,6 +991,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   allowedType: 0
+  allowedArmorType: 0
+  enforceArmorType: 0
 --- !u!1 &5275184052571583297
 GameObject:
   m_ObjectHideFlags: 0
@@ -1143,6 +1159,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   allowedType: 0
+  allowedArmorType: 0
+  enforceArmorType: 0
 --- !u!1 &5705474248047367104
 GameObject:
   m_ObjectHideFlags: 0
@@ -1232,6 +1250,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   allowedType: 0
+  allowedArmorType: 0
+  enforceArmorType: 0
 --- !u!1 &5710851774948036455
 GameObject:
   m_ObjectHideFlags: 0
@@ -1321,6 +1341,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   allowedType: 0
+  allowedArmorType: 0
+  enforceArmorType: 0
 --- !u!1 &6440376267514464331
 GameObject:
   m_ObjectHideFlags: 0
@@ -1485,7 +1507,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1403309aad520ae48a7bffbae3a070b3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  allowedType: 4
+  allowedType: 1
+  allowedArmorType: 2
+  enforceArmorType: 1
 --- !u!1 &6714013823523817823
 GameObject:
   m_ObjectHideFlags: 0
@@ -1575,6 +1599,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   allowedType: 0
+  allowedArmorType: 0
+  enforceArmorType: 0
 --- !u!1 &6784055786292647604
 GameObject:
   m_ObjectHideFlags: 0
@@ -1664,6 +1690,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   allowedType: 0
+  allowedArmorType: 0
+  enforceArmorType: 0
 --- !u!1 &6822959325439042161
 GameObject:
   m_ObjectHideFlags: 0
@@ -2089,8 +2117,8 @@ MonoBehaviour:
   itemUIPrefab: {fileID: 7888221409070537629, guid: 07840c93f5d2e08469dbb40ced9419cf, type: 3}
   isTesting: 1
   testItem: {fileID: 11400000, guid: 7ec646e5127c1a44a8e805fe872b6905, type: 2}
-  testItem1: {fileID: 11400000, guid: 69c53093d607f384f9325409c6b2a9b8, type: 2}
-  testItem2: {fileID: 11400000, guid: 9dbc6bd8acffc744fbd2a3f56250acec, type: 2}
+  testItem1: {fileID: 11400000, guid: 927ba5bcfb440134bbff836ac228c3a5, type: 2}
+  testItem2: {fileID: 11400000, guid: 6208781ff1e6c4d4fad9631fdc55bb3f, type: 2}
 --- !u!1 &7747885268392747648
 GameObject:
   m_ObjectHideFlags: 0
@@ -2395,6 +2423,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   allowedType: 0
+  allowedArmorType: 0
+  enforceArmorType: 0
 --- !u!1 &8700699664127327985
 GameObject:
   m_ObjectHideFlags: 0
@@ -2484,6 +2514,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   allowedType: 0
+  allowedArmorType: 0
+  enforceArmorType: 0
 --- !u!1 &8835780311817495904
 GameObject:
   m_ObjectHideFlags: 0
@@ -2573,6 +2605,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   allowedType: 0
+  allowedArmorType: 0
+  enforceArmorType: 0
 --- !u!1 &8888391771517189620
 GameObject:
   m_ObjectHideFlags: 0
@@ -2662,6 +2696,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   allowedType: 0
+  allowedArmorType: 0
+  enforceArmorType: 0
 --- !u!1 &8911446118685171705
 GameObject:
   m_ObjectHideFlags: 0
@@ -2751,6 +2787,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   allowedType: 0
+  allowedArmorType: 0
+  enforceArmorType: 0
 --- !u!1 &8984744767323659126
 GameObject:
   m_ObjectHideFlags: 0
@@ -3125,3 +3163,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   allowedType: 0
+  allowedArmorType: 0
+  enforceArmorType: 0
