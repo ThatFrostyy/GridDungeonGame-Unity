@@ -257,13 +257,15 @@ public class ChaseAndAttackAI : EnemyAI
     {
         if (player == null || playerHealth == null) return;
 
+        Vector2 direction = (player.transform.position - transform.position).normalized;
+        SetFacing(direction.x);
+
         int finalDamage = attackDamage;
         bool isCrit = Random.value < critChance;
 
         if (isCrit)
         {
             finalDamage = Mathf.RoundToInt(attackDamage * critMultiplier);
-            Debug.Log($"CRITICAL HIT! Dealt {finalDamage} damage.");
 
             if (audioSource != null && critSound != null)
             {
@@ -287,6 +289,7 @@ public class ChaseAndAttackAI : EnemyAI
             animator.SetTrigger("Attack");
         }
     }
+
 
     /// <summary>
     /// Sets the facing direction of the enemy sprite based on movement.
