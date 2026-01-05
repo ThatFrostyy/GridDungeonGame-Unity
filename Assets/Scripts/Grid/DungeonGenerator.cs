@@ -2,12 +2,13 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
-public class DungeonGenerator2D : MonoBehaviour
+public class DungeonGenerator : MonoBehaviour
 {
     [Header("Dungeon Settings")]
     [SerializeField] private int width = 10;
     [SerializeField] private int height = 10;
     [SerializeField] private int roomCount = 8;
+    [SerializeField] private int edgePadding = 2;
 
     [Header("Room Settings")]
     [SerializeField] private int minRoomWidth = 4;
@@ -20,10 +21,15 @@ public class DungeonGenerator2D : MonoBehaviour
     [SerializeField] private int maxCorridorWidth = 3;
 
     [Header("Tiles")]
-    [SerializeField] private TileBase floorTile;
-    [SerializeField] private TileBase wallTile; // can be RuleTile
+    [SerializeField] private RuleTile floorTile;
+    [SerializeField] private RuleTile wallTile;
 
-    private CellType[,] dungeonGrid;
+    private enum CellType
+    {
+        Empty,
+        Floor,
+        Wall
+    }
 
     private struct Room
     {
@@ -31,6 +37,7 @@ public class DungeonGenerator2D : MonoBehaviour
         public Vector2Int Center => Vector2Int.RoundToInt(bounds.center);
     }
 
+    private CellType[,] dungeonGrid;
     private List<Room> rooms = new List<Room>();
 
     private Tilemap floorTilemap;
@@ -39,13 +46,11 @@ public class DungeonGenerator2D : MonoBehaviour
     private void Awake()
     {
         InitializeReferences();
-    }
 
-    private void Start()
-    {
         InitializeGrid();
         GenerateRooms(roomCount);
         ConnectRooms();
+        RemoveThinWalls();
         GenerateDungeon();
     }
 
@@ -53,8 +58,8 @@ public class DungeonGenerator2D : MonoBehaviour
     {
         if (GameObjectLocator.Instance != null)
         {
-            obstacleTilemap = GameObjectLocator.Instance.ObstacleTilemap.Tilemap;
             floorTilemap = GameObjectLocator.Instance.Tilemap;
+            obstacleTilemap = GameObjectLocator.Instance.ObstacleTilemap.Tilemap;
         }
         else
         {
@@ -89,39 +94,52 @@ public class DungeonGenerator2D : MonoBehaviour
 
         rooms.Clear();
 
+        int maxAttempts = 50;
+
         for (int i = 0; i < count; i++)
         {
-            int roomWidth = Random.Range(minRoomWidth, maxRoomWidth);
-            int roomHeight = Random.Range(minRoomHeight, maxRoomHeight);
-
-            int roomX = Random.Range(1, width - roomWidth - 1);
-            int roomY = Random.Range(1, height - roomHeight - 1);
-
-            RectInt newRoom = new RectInt(roomX, roomY, roomWidth, roomHeight);
-
-            bool overlaps = false;
-            foreach (var room in rooms)
+            for (int attempt = 0; attempt < maxAttempts; attempt++)
             {
-                if (room.bounds.Overlaps(newRoom))
+                int roomWidth = Random.Range(minRoomWidth, maxRoomWidth);
+                int roomHeight = Random.Range(minRoomHeight, maxRoomHeight);
+
+                int maxX = width - roomWidth - edgePadding;
+                int maxY = height - roomHeight - edgePadding;
+
+                if (maxX <= edgePadding || maxY <= edgePadding)
                 {
-                    overlaps = true;
-                    break;
+                    Debug.LogWarning($"Dungeon too small for edge padding of {edgePadding}. " + $"Reduce padding or increase dungeon size.");
+                    return;
                 }
-            }
 
-            if (overlaps)
-            {
-                i--;
-                continue;
-            }
+                int roomX = Random.Range(edgePadding, maxX);
+                int roomY = Random.Range(edgePadding, maxY);
 
-            rooms.Add(new Room { bounds = newRoom });
+                RectInt newRoom = new RectInt(roomX, roomY, roomWidth, roomHeight);
 
-            for (int x = newRoom.xMin; x < newRoom.xMax; x++)
-            {
-                for (int y = newRoom.yMin; y < newRoom.yMax; y++)
+                bool overlaps = false;
+                foreach (var room in rooms)
                 {
-                    dungeonGrid[x, y] = CellType.Floor;
+                    if (room.bounds.Overlaps(newRoom))
+                    {
+                        overlaps = true;
+                        break;
+                    }
+                }
+
+                if (!overlaps)
+                {
+                    rooms.Add(new Room { bounds = newRoom });
+
+                    for (int x = newRoom.xMin; x < newRoom.xMax; x++)
+                    {
+                        for (int y = newRoom.yMin; y < newRoom.yMax; y++)
+                        {
+                            dungeonGrid[x, y] = CellType.Floor;
+                        }
+                    }
+
+                    break;
                 }
             }
         }
@@ -162,7 +180,8 @@ public class DungeonGenerator2D : MonoBehaviour
         {
             for (int w = -half; w <= half; w++)
             {
-                dungeonGrid[x, y + w] = CellType.Floor;
+                int corridorY = Mathf.Clamp(y + w, edgePadding, this.height - edgePadding - 1);
+                dungeonGrid[x, corridorY] = CellType.Floor;
             }
         }
     }
@@ -176,8 +195,79 @@ public class DungeonGenerator2D : MonoBehaviour
         {
             for (int w = -half; w <= half; w++)
             {
-                dungeonGrid[x + w, y] = CellType.Floor;
+                int corridorX = Mathf.Clamp(x + w, edgePadding, this.width - edgePadding - 1);
+                dungeonGrid[corridorX, y] = CellType.Floor;
             }
+        }
+    }
+
+    #endregion
+
+    #region Post Process
+
+    private void RemoveThinWalls()
+    {
+        List<Vector2Int> toFloor = new List<Vector2Int>();
+
+        for (int x = edgePadding; x < width - edgePadding; x++)
+        {
+            for (int y = edgePadding; y < height - edgePadding; y++)
+            {
+                if (dungeonGrid[x, y] != CellType.Wall)
+                    continue;
+
+                bool floorLeft = dungeonGrid[x - 1, y] == CellType.Floor;
+                bool floorRight = dungeonGrid[x + 1, y] == CellType.Floor;
+                bool floorUp = dungeonGrid[x, y + 1] == CellType.Floor;
+                bool floorDown = dungeonGrid[x, y - 1] == CellType.Floor;
+
+                bool floorUpLeft = dungeonGrid[x - 1, y + 1] == CellType.Floor;
+                bool floorUpRight = dungeonGrid[x + 1, y + 1] == CellType.Floor;
+                bool floorDownLeft = dungeonGrid[x - 1, y - 1] == CellType.Floor;
+                bool floorDownRight = dungeonGrid[x + 1, y - 1] == CellType.Floor;
+
+                // Vertical thin wall
+                if (floorLeft && floorRight)
+                {
+                    toFloor.Add(new Vector2Int(x, y));
+                    continue;
+                }
+
+                // Horizontal thin wall
+                if (floorUp && floorDown)
+                {
+                    toFloor.Add(new Vector2Int(x, y));
+                    continue;
+                }
+
+                int floorCount = 0;
+
+                if (floorLeft) floorCount++;
+                if (floorRight) floorCount++;
+                if (floorUp) floorCount++;
+                if (floorDown) floorCount++;
+                if (floorUpLeft) floorCount++;
+                if (floorUpRight) floorCount++;
+                if (floorDownLeft) floorCount++;
+                if (floorDownRight) floorCount++;
+
+                if (floorCount >= 6)
+                {
+                    toFloor.Add(new Vector2Int(x, y));
+                    continue;
+                }
+
+                // Single cell wall
+                if (floorLeft && floorRight && floorUp && floorDown)
+                {
+                    toFloor.Add(new Vector2Int(x, y));
+                }
+            }
+        }
+
+        foreach (var pos in toFloor)
+        {
+            dungeonGrid[pos.x, pos.y] = CellType.Floor;
         }
     }
 
@@ -211,11 +301,4 @@ public class DungeonGenerator2D : MonoBehaviour
     }
 
     #endregion
-}
-
-public enum CellType
-{
-    Empty,
-    Floor,
-    Wall
 }
