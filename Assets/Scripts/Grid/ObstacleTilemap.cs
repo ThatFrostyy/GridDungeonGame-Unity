@@ -6,6 +6,8 @@ public class ObstacleTilemap : MonoBehaviour
 {
     [SerializeField] private Tilemap obstacleTilemap;
 
+    public Tilemap Tilemap => obstacleTilemap;
+
     private readonly HashSet<Vector3Int> obstacleTilePositions = new();
 
     private void Awake()
