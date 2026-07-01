@@ -17,7 +17,7 @@ public abstract class Health : MonoBehaviour
     [SerializeField] protected GameObject hitEffectPrefab;
     [SerializeField] protected float flickerDuration = 0.3f;
     [SerializeField] protected int flickerCount = 3;
-    [SerializeField] GameObject floatingDamageText;
+    [SerializeField] private GameObject floatingDamageText;
 
     protected List<SpriteRenderer> spriteRenderers;
 
@@ -131,8 +131,16 @@ public abstract class Health : MonoBehaviour
             Instantiate(hitEffectPrefab, transform.position, Quaternion.identity);
         }
 
+        if (floatingDamageText == null)
+        {
+            return;
+        }
+
         GameObject text = Instantiate(floatingDamageText, transform.position, Quaternion.identity);
-        text.transform.GetChild(0).GetComponent<TextMesh>().text = damage.ToString();
+        if (text.transform.childCount > 0 && text.transform.GetChild(0).TryGetComponent(out TextMesh textMesh))
+        {
+            textMesh.text = damage.ToString();
+        }
     }
 
     /// <summary>
@@ -188,4 +196,4 @@ public abstract class Health : MonoBehaviour
     {
         OnDeath?.Invoke();
     }
-} 
+}

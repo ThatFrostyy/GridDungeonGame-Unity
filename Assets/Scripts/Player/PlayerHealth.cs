@@ -18,9 +18,19 @@ public class PlayerHealth : Health
     /// <param name="damage">Recived damage</param>
     protected override int ModifyIncomingDamage(int damage)
     {
+        if (player == null)
+        {
+            return damage;
+        }
+
         int totalProtection = 0;
         foreach (var armor in player.EquippedArmor.Values)
         {
+            if (armor == null)
+            {
+                continue;
+            }
+
             totalProtection += armor.protection;
         }
 

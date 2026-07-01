@@ -1,11 +1,10 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
 /// <summary>
-/// Enemy AI that chases, attacks, patrols, or retreats based on player proximity and health.
+/// Turn-based enemy AI facade that delegates behavior selection to a state machine.
 /// </summary>
+[RequireComponent(typeof(EnemyStateMachine))]
 public class ChaseAndAttackAI : EnemyAI
 {
     [Header("Movement Settings")]
@@ -36,36 +35,40 @@ public class ChaseAndAttackAI : EnemyAI
     [SerializeField] private AudioSource audioSource;
 
     [Header("Editor")]
-    private Color spotRangeColor = Color.yellow;
+    [SerializeField] private Color spotRangeColor = Color.yellow;
 
-    private bool isMoving = false;
-
+    private EnemyAIContext context;
+    private EnemyStateMachine stateMachine;
     private Player player;
     private PlayerHealth playerHealth;
     private Tilemap tilemap;
     private ObstacleTilemap obstacleTilemap;
 
-
     /// <summary>
-    /// Initializes references using the GameObjectLocator
+    /// Initializes references and behavior states.
     /// </summary>
     private void Awake()
     {
         InitializeReferences();
+        InitializeStateMachine();
     }
 
     /// <summary>
-    /// Gets necessary references from the GameObjectLocator
+    /// Gets scene references from the GameObjectLocator.
     /// </summary>
     private void InitializeReferences()
     {
+        enemy ??= GetComponent<Enemy>();
+        enemyHealth ??= GetComponent<EnemyHealth>();
+        audioSource ??= GetComponent<AudioSource>();
+        animator ??= GetComponentInChildren<Animator>();
+
         if (GameObjectLocator.Instance != null)
         {
             player = GameObjectLocator.Instance.Player;
             playerHealth = GameObjectLocator.Instance.GetComponentByTag<PlayerHealth>("Player");
             obstacleTilemap = GameObjectLocator.Instance.ObstacleTilemap;
             tilemap = GameObjectLocator.Instance.Tilemap;
-
         }
         else
         {
@@ -74,237 +77,65 @@ public class ChaseAndAttackAI : EnemyAI
     }
 
     /// <summary>
-    /// Attempts to perform a single AI action: patrol, retreat, chase, or attack.
+    /// Creates the runtime state machine. Existing prefabs keep this script attached,
+    /// so the FSM is created from code when the component is missing.
     /// </summary>
-    /// <returns>True if an action was performed, otherwise false.</returns>
+    private void InitializeStateMachine()
+    {
+        stateMachine = GetComponent<EnemyStateMachine>();
+        if (stateMachine == null)
+        {
+            stateMachine = gameObject.AddComponent<EnemyStateMachine>();
+        }
+
+        context = new EnemyAIContext(
+            this,
+            transform,
+            player,
+            playerHealth,
+            enemy,
+            enemyHealth,
+            tilemap,
+            obstacleTilemap,
+            animator,
+            audioSource,
+            moveSound,
+            attackSound,
+            critSound,
+            moveSpeed,
+            spotRange,
+            retreatHealth,
+            gridSize,
+            attackDamage,
+            attackRange,
+            critChance,
+            critMultiplier);
+
+        stateMachine.Initialize(
+            context,
+            new PatrolState(),
+            new RetreatState(),
+            new AttackState(),
+            new ChaseState());
+    }
+
+    /// <summary>
+    /// Refreshes scene references that can be created after this component awakens.
+    /// </summary>
+    private void RefreshContextReferences()
+    {
+        InitializeReferences();
+        context?.UpdateSceneReferences(player, playerHealth, tilemap, obstacleTilemap);
+    }
+
+    /// <summary>
+    /// Attempts to perform one turn-based AI action through the state machine.
+    /// </summary>
     public override bool PerformAI()
     {
-        if (isMoving || player == null || enemy == null || enemyHealth == null)
-            return false;
-
-        Vector2Int e = GridUtils.WorldToGrid(transform.position);
-        Vector2Int p = GridUtils.WorldToGrid(player.transform.position);
-        int dist = Mathf.Abs(e.x - p.x) + Mathf.Abs(e.y - p.y);
-
-        if (dist > spotRange)
-            return Patrol();
-
-        if (enemyHealth.HealthPercentage < retreatHealth)
-            return Retreat();
-
-        if (IsWithinAttackRange(e, p))
-        {
-            AttackPlayer();
-            return true;
-        }
-
-        return TryMoveTowardsPlayer(p);
+        RefreshContextReferences();
+        return stateMachine != null && stateMachine.PerformAction();
     }
-
-
-    /// <summary>
-    /// Patrols randomly to a nearby tile if possible.
-    /// </summary>
-    /// <returns>True if patrol movement started, otherwise false.</returns>
-    private bool Patrol()
-    {
-        Vector2Int enemyGrid = GridUtils.WorldToGrid(transform.position);
-        Vector2Int[] directions = new Vector2Int[]
-        {
-            Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right
-        };
-
-
-        for (int attempt = 0; attempt < 3; attempt++)
-        {
-            Vector2Int dir = directions[Random.Range(0, directions.Length)];
-            Vector2Int targetGrid = enemyGrid + dir;
-
-            if (tilemap != null && !tilemap.HasTile(new Vector3Int(targetGrid.x, targetGrid.y, 0)))
-                continue;
-
-            if (obstacleTilemap != null && obstacleTilemap.IsTileObstacle(GridUtils.GridToWorld(targetGrid)))
-                continue;
-
-            Vector2 targetWorld = GridUtils.GridToWorld(targetGrid);
-            StartCoroutine(MoveAlongPath(targetWorld));
-            return true;
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// Attempts to retreat to the farthest adjacent tile from the player.
-    /// </summary>
-    /// <returns>True if retreat movement started, otherwise false.</returns>
-    private bool Retreat()
-    {
-        Vector2Int enemyGrid = GridUtils.WorldToGrid(transform.position);
-        Vector2Int playerGrid = GridUtils.WorldToGrid(player.transform.position);
-        Vector2Int[] directions = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
-
-        Vector2Int bestTile = enemyGrid;
-        int maxDist = Mathf.Abs(enemyGrid.x - playerGrid.x) + Mathf.Abs(enemyGrid.y - playerGrid.y);
-
-        foreach (var dir in directions)
-        {
-            Vector2Int candidate = enemyGrid + dir;
-            if (obstacleTilemap != null && obstacleTilemap.IsTileObstacle(GridUtils.GridToWorld(candidate)))
-                continue;
-
-            if (candidate == playerGrid)
-                continue;
-
-            int dist = Mathf.Abs(candidate.x - playerGrid.x) + Mathf.Abs(candidate.y - playerGrid.y);
-            if (dist > maxDist)
-            {
-                maxDist = dist;
-                bestTile = candidate;
-            }
-        }
-
-        if (bestTile != enemyGrid)
-        {
-            Vector2 nextPos = GridUtils.GridToWorld(bestTile);
-            StartCoroutine(MoveAlongPath(nextPos));
-            return true; 
-        }
-
-        return false; 
-    }
-
-    /// <summary>
-    /// Attempts to move towards the player using A* pathfinding.
-    /// </summary>
-    /// <param name="playerGrid">Grid position of the player.</param>
-    /// <returns>True if movement started, otherwise false.</returns>
-    private bool TryMoveTowardsPlayer(Vector2Int playerGrid)
-    {
-        Vector2 startPos = GridUtils.GridToWorld(GridUtils.WorldToGrid(transform.position));
-        Vector2 targetPos = GridUtils.GridToWorld(playerGrid);
-
-        List<Vector2> path = AStar.FindPath(startPos, targetPos, gridSize, obstacleTilemap.IsTileObstacle);
-
-        if (path != null && path.Count > 1)
-        {
-            Vector2Int nextGrid = GridUtils.WorldToGrid(path[1]);
-            Vector2Int playerGridPos = GridUtils.WorldToGrid(player.transform.position);
-
-            if (nextGrid == playerGridPos)
-                return false;
-
-            Vector2 nextPos = path[1];
-            Vector2 direction = (nextPos - (Vector2)transform.position).normalized;
-            SetFacing(direction.x);
-
-            StartCoroutine(MoveAlongPath(nextPos));
-            return true;
-        }
-        return false;
-    }
-
-    #region Helper Methods
-    /// <summary>
-    /// Checks if two grid positions are adjacent (Manhattan distance 1).
-    /// </summary>
-    /// <param name="a">First grid position.</param>
-    /// <param name="b">Second grid position.</param>
-    /// <returns>True if adjacent, otherwise false.</returns>
-    private bool IsWithinAttackRange(Vector2Int a, Vector2Int b)
-    {
-        int dist = Mathf.Abs(a.x - b.x) + Mathf.Abs(a.y - b.y);
-        return dist <= attackRange;
-    }
-
-
-    /// <summary>
-    /// Moves the enemy along a path to the specified position.
-    /// </summary>
-    /// <param name="nextPos">World position to move to.</param>
-    /// <returns>Coroutine enumerator.</returns>
-    private IEnumerator MoveAlongPath(Vector2 nextPos)
-    {
-        isMoving = true;
-        if (animator != null)
-        {
-            animator.SetBool("isWalking", true);
-        }
-
-        if (moveSound != null && audioSource != null)
-        {
-            audioSource.PlayOneShot(moveSound);
-        }
-
-        while ((Vector2)transform.position != nextPos)
-        {
-            float step = moveSpeed * Time.deltaTime;
-            transform.position = Vector3.MoveTowards(transform.position, nextPos, step);
-            yield return new WaitForFixedUpdate();
-        }
-
-        if (animator != null)
-        {
-            animator.SetBool("isWalking", false);
-        }
-        isMoving = false;
-    }
-
-    /// <summary>
-    /// Attacks the player, applying damage and playing effects.
-    /// </summary>
-    private void AttackPlayer()
-    {
-        if (player == null || playerHealth == null) return;
-
-        Vector2 direction = (player.transform.position - transform.position).normalized;
-        SetFacing(direction.x);
-
-        int finalDamage = attackDamage;
-        bool isCrit = Random.value < critChance;
-
-        if (isCrit)
-        {
-            finalDamage = Mathf.RoundToInt(attackDamage * critMultiplier);
-
-            if (audioSource != null && critSound != null)
-            {
-                audioSource.PlayOneShot(critSound);
-            }
-        }
-        else
-        {
-            if (audioSource != null && attackSound != null)
-            {
-                audioSource.pitch = Random.Range(0.8f, 1.2f);
-                audioSource.PlayOneShot(attackSound);
-                audioSource.pitch = 1f;
-            }
-        }
-
-        playerHealth.TakeDamage(finalDamage);
-
-        if (animator != null)
-        {
-            animator.SetTrigger("Attack");
-        }
-    }
-
-
-    /// <summary>
-    /// Sets the facing direction of the enemy sprite based on movement.
-    /// </summary>
-    /// <param name="xDirection">X direction of movement.</param>
-    private void SetFacing(float xDirection)
-    {
-        if (Mathf.Abs(xDirection) > 0.01f)
-        {
-            Vector3 scale = transform.localScale;
-            scale.x = xDirection < 0 ? -Mathf.Abs(scale.x) : Mathf.Abs(scale.x);
-            transform.localScale = scale;
-        }
-    }
-    #endregion Helper Methods
 
     #region Testing
     /// <summary>

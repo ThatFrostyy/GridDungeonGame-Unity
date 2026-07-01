@@ -162,6 +162,8 @@ public class GameObjectLocator : MonoBehaviour
         _tagCache.Clear();
         _componentCache.Clear();
         cachedPlayer = null;
+        cachedTilemap = null;
+        cachedObstacleTilemapMap = null;
         cachedObstacleTilemap = null;
         cachedTileSelection = null;
         cachedUIManager = null;
@@ -208,4 +210,4 @@ public class GameObjectLocator : MonoBehaviour
         ValidateTagExists("TileSelection");
     }
     #endregion
-} 
+}
