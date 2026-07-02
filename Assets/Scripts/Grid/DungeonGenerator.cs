@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
+[DefaultExecutionOrder(100)]
 public class DungeonGenerator : MonoBehaviour
 {
     [Header("Dungeon Settings")]
@@ -42,10 +43,17 @@ public class DungeonGenerator : MonoBehaviour
 
     private Tilemap floorTilemap;
     private Tilemap obstacleTilemap;
+    private ObstacleTilemap obstacleTilemapController;
 
     private void Awake()
     {
         InitializeReferences();
+
+        if (floorTilemap == null || obstacleTilemap == null)
+        {
+            Debug.LogError("DungeonGenerator could not find the floor or obstacle tilemap.", this);
+            return;
+        }
 
         InitializeGrid();
         GenerateRooms(roomCount);
@@ -59,7 +67,8 @@ public class DungeonGenerator : MonoBehaviour
         if (GameObjectLocator.Instance != null)
         {
             floorTilemap = GameObjectLocator.Instance.Tilemap;
-            obstacleTilemap = GameObjectLocator.Instance.ObstacleTilemap.Tilemap;
+            obstacleTilemapController = GameObjectLocator.Instance.ObstacleTilemap;
+            obstacleTilemap = obstacleTilemapController != null ? obstacleTilemapController.Tilemap : GameObjectLocator.Instance.ObstacleTilemapMap;
         }
         else
         {
@@ -143,6 +152,8 @@ public class DungeonGenerator : MonoBehaviour
                 }
             }
         }
+
+        obstacleTilemapController?.RefreshObstacleTiles();
     }
 
     #endregion

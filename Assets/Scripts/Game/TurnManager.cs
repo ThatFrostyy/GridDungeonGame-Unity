@@ -57,7 +57,7 @@ public class TurnManager : MonoBehaviour
             Debug.LogError("GameObjectLocator not found! Make sure it exists in the scene.", this);
         }
 
-        enemies = Object.FindObjectsByType<Enemy>(FindObjectsSortMode.None);
+        enemies = Object.FindObjectsByType<Enemy>(FindObjectsInactive.Exclude);
     }
 
     private void Start()
@@ -71,8 +71,19 @@ public class TurnManager : MonoBehaviour
     public void StartPlayerTurn()
     {
         playerTurn = true;
-        endTurnButton.interactable = true;
-        player.ResetActionPoints();
+        if (endTurnButton != null)
+        {
+            endTurnButton.interactable = true;
+        }
+
+        if (player != null)
+        {
+            player.ResetActionPoints();
+        }
+        else
+        {
+            Debug.LogWarning("TurnManager could not find the Player for turn reset.", this);
+        }
 
     }
 
@@ -84,7 +95,10 @@ public class TurnManager : MonoBehaviour
         if (playerTurn)
         {
             playerTurn = false;
-            endTurnButton.interactable = false;
+            if (endTurnButton != null)
+            {
+                endTurnButton.interactable = false;
+            }
             foreach (var enemy in enemies)
             {
                 enemy.ResetActionPoints();

@@ -6,6 +6,7 @@ using UnityEngine.Tilemaps;
 /// Singleton that centralizes GameObject location by tag
 /// Avoids multiple FindGameObjectWithTag calls and caches important references
 /// </summary>
+[DefaultExecutionOrder(-1000)]
 public class GameObjectLocator : MonoBehaviour
 {
     #region Singleton
@@ -97,7 +98,7 @@ public class GameObjectLocator : MonoBehaviour
         get
         {
             if (cachedUIManager == null)
-                cachedUIManager = FindFirstObjectByType<UIManager>();
+                cachedUIManager = FindAnyObjectByType<UIManager>();
             return cachedUIManager;
         }
     }

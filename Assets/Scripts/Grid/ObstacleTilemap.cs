@@ -12,12 +12,19 @@ public class ObstacleTilemap : MonoBehaviour
 
     private void Awake()
     {
-        InitializeObstacleTiles();
+        RefreshObstacleTiles();
     }
 
-    private void InitializeObstacleTiles()
+    public void RefreshObstacleTiles()
     {
         obstacleTilePositions.Clear();
+
+        obstacleTilemap ??= GetComponent<Tilemap>();
+        if (obstacleTilemap == null)
+        {
+            Debug.LogError("ObstacleTilemap requires a Tilemap reference.", this);
+            return;
+        }
 
         BoundsInt bounds = obstacleTilemap.cellBounds;
         TileBase[] alltiles = obstacleTilemap.GetTilesBlock(bounds);
@@ -38,6 +45,11 @@ public class ObstacleTilemap : MonoBehaviour
 
     public bool IsTileObstacle(Vector2 position)
     {
+        if (obstacleTilemap == null)
+        {
+            return false;
+        }
+
         Vector3Int gridPos = obstacleTilemap.WorldToCell(position);
 
         return obstacleTilePositions.Contains(gridPos);
