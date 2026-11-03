@@ -50,7 +50,7 @@ public class TileSelection : MonoBehaviour
             }
         }
 
-        Vector2 mouseWorldPos = mainCamera.ScreenToWorldPoint(Input.mousePosition);
+        Vector2 mouseWorldPos = mainCamera.ScreenToWorldPoint(GameInput.PointerPosition);
         Vector2Int gridPos = GridUtils.WorldToGrid(mouseWorldPos);
 
         if (HasTileAt(tilemap, mouseWorldPos) && !HasTileAt(obstacleTilemap, mouseWorldPos))

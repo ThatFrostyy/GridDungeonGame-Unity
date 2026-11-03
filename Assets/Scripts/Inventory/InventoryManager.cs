@@ -44,7 +44,7 @@ public class InventoryManager : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Tab))
+        if (GameState.AcceptsInput && GameInput.ToggleInventory.WasPressedThisFrame())
         {
             ToggleInventory();
         }

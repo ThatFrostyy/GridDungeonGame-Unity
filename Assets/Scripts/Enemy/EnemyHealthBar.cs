@@ -57,8 +57,24 @@ public class EnemyHealthBar : MonoBehaviour
 
         if (mainCamera != null)
         {
-            transform.forward = mainCamera.transform.forward;
+            transform.rotation = mainCamera.transform.rotation;
         }
+
+        KeepUnmirrored();
+    }
+
+    /// <summary>
+    /// Enemies flip their sprite with a negative x scale, which would mirror this child bar too.
+    /// Cancel it out so the text always reads correctly.
+    /// </summary>
+    private void KeepUnmirrored()
+    {
+        Transform parent = transform.parent;
+        float parentSign = parent != null && parent.lossyScale.x < 0f ? -1f : 1f;
+
+        Vector3 scale = transform.localScale;
+        scale.x = Mathf.Abs(scale.x) * parentSign;
+        transform.localScale = scale;
     }
 
     private void UpdateBar(int current, int max)

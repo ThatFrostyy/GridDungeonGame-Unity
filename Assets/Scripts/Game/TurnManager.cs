@@ -49,6 +49,14 @@ public class TurnManager : MonoBehaviour
         StartPlayerTurn();
     }
 
+    private void Update()
+    {
+        if (playerTurn && GameState.AcceptsInput && GameInput.EndTurn.WasPressedThisFrame())
+        {
+            EndPlayerTurn();
+        }
+    }
+
     private void InitializeReferences()
     {
         if (GameObjectLocator.Instance == null)

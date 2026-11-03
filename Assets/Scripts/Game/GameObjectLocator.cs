@@ -34,7 +34,7 @@ public class GameObjectLocator : MonoBehaviour
         {
             if (cachedUIManager == null)
             {
-                cachedUIManager = FindFirstObjectByType<UIManager>();
+                cachedUIManager = FindAnyObjectByType<UIManager>();
             }
 
             return cachedUIManager;

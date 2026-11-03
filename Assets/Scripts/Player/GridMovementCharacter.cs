@@ -51,7 +51,7 @@ public class GridMovementCharacter : MonoBehaviour
 
     private void Update()
     {
-        if (mover.IsMoving || !Input.GetMouseButtonDown(0) || tileSelection == null)
+        if (!GameState.AcceptsInput || mover.IsMoving || tileSelection == null || !GameInput.Click.WasPressedThisFrame())
         {
             return;
         }

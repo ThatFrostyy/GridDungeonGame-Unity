@@ -18,6 +18,6 @@ public static class AudioUtils
         // Pitch is a property of the source, so it must be set before the clip plays
         // and stay set (resetting it right away would cancel the variation).
         source.pitch = randomizePitch ? Random.Range(MinPitch, MaxPitch) : 1f;
-        source.PlayOneShot(clip);
+        source.PlayOneShot(clip, GameSettings.SfxVolume);
     }
 }
