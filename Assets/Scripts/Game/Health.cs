@@ -20,6 +20,7 @@ public abstract class Health : MonoBehaviour
     [SerializeField] private GameObject floatingDamageText;
 
     protected List<SpriteRenderer> spriteRenderers;
+    private Coroutine flickerRoutine;
 
     public int MaxHealth => maxHealth;
     public int CurrentHealth => currentHealth;
@@ -63,7 +64,7 @@ public abstract class Health : MonoBehaviour
     /// <param name="amount">Amount of damage to apply</param>
     public virtual void TakeDamage(int amount)
     {
-        if (amount <= 0) return;
+        if (amount <= 0 || !IsAlive) return;
 
         // Call the modifier hook before applying damage
         int modifiedDamage = ModifyIncomingDamage(amount);
@@ -119,7 +120,7 @@ public abstract class Health : MonoBehaviour
     /// <summary>
     /// Gets the current health percentage (0.0 - 1.0)
     /// </summary>
-    public float HealthPercentage => (float)currentHealth / maxHealth;
+    public float HealthPercentage => maxHealth > 0 ? (float)currentHealth / maxHealth : 0f;
 
     /// <summary>
     /// Spawns the hit effect visual
@@ -148,10 +149,19 @@ public abstract class Health : MonoBehaviour
     /// </summary>
     protected virtual void PlayFlickerEffect()
     {
-        if (spriteRenderers != null && spriteRenderers.Count > 0)
+        if (spriteRenderers == null || spriteRenderers.Count == 0)
         {
-            StartCoroutine(FlickerCoroutine());
+            return;
         }
+
+        // Restart instead of stacking, otherwise overlapping flickers leave sprites hidden.
+        if (flickerRoutine != null)
+        {
+            StopCoroutine(flickerRoutine);
+            SetRenderersEnabled(true);
+        }
+
+        flickerRoutine = StartCoroutine(FlickerCoroutine());
     }
 
     /// <summary>
@@ -159,7 +169,7 @@ public abstract class Health : MonoBehaviour
     /// </summary>
     protected virtual IEnumerator FlickerCoroutine()
     {
-        float flickerInterval = flickerDuration / (flickerCount * 2f);
+        float flickerInterval = flickerDuration / Mathf.Max(flickerCount * 2f, 1f);
 
         for (int i = 0; i < flickerCount; i++)
         {
@@ -168,6 +178,8 @@ public abstract class Health : MonoBehaviour
             SetRenderersEnabled(true);
             yield return new WaitForSeconds(flickerInterval);
         }
+
+        flickerRoutine = null;
     }
 
     /// <summary>

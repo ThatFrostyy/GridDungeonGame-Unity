@@ -18,19 +18,11 @@ public class InventorySlot : MonoBehaviour, IDropHandler
     private Player player;
 
     /// <summary>
-    /// Gets the currently stored item in the slot.
+    /// The item currently stored in the slot.
     /// </summary>
     public InventoryItemUI CurrentItemUI => currentItemUI;
 
     private void Awake()
-    {
-        InitializeReferences();
-    }
-
-    /// <summary>
-    /// Gets necessary references from the GameObjectLocator.
-    /// </summary>
-    private void InitializeReferences()
     {
         if (GameObjectLocator.Instance != null)
         {
@@ -42,25 +34,21 @@ public class InventorySlot : MonoBehaviour, IDropHandler
         }
     }
 
-    /// <summary>
-    /// Sets the current InventoryItemUI.
-    /// </summary>
-    /// <param name="itemUI">Item UI to assign.</param>
     public void SetCurrentItemUI(InventoryItemUI itemUI)
     {
         currentItemUI = itemUI;
     }
 
     /// <summary>
-    /// Handles logic when an item is dropped into the slot.
+    /// Handles an item being dropped into this slot: validates it, updates equipment and swaps the UI.
     /// </summary>
-    /// <param name="eventData">Pointer event data.</param>
     public void OnDrop(PointerEventData eventData)
     {
-        var draggedItem = eventData.pointerDrag.GetComponent<InventoryItemUI>();
-
-        if (eventData.pointerDrag == null) return;
-        if (draggedItem == null) return;
+        if (eventData.pointerDrag == null ||
+            !eventData.pointerDrag.TryGetComponent(out InventoryItemUI draggedItem))
+        {
+            return;
+        }
 
         if (allowedType != ItemType.Generic && draggedItem.Item.itemType != allowedType)
         {
@@ -68,103 +56,89 @@ public class InventorySlot : MonoBehaviour, IDropHandler
             return;
         }
 
+        // Validate before touching equipment so a rejected drop changes nothing.
+        if (!CanEquip(draggedItem))
+        {
+            return;
+        }
+
         bool unequipped = TryUnequipFromOriginalSlot(draggedItem);
-
-        if (!TryEquipToNewSlot(draggedItem)) return;
-
-        HandleUIPlacement(draggedItem, unequipped);
+        Equip(draggedItem);
+        PlaceItem(draggedItem, unequipped);
     }
 
-    private bool TryUnequipFromOriginalSlot(InventoryItemUI draggedItem)
-    {
-        if (draggedItem.OriginalSlot == null) return false;
-
-        if (draggedItem.OriginalSlot.allowedType == ItemType.Armor && allowedType != ItemType.Armor)
-        {
-            if (player != null)
-            {
-                player.UnequipArmor(draggedItem.Item.armorData.type);
-                draggedItem.OriginalSlot.SetCurrentItemUI(null);
-                return true;
-            }
-        }
-        else if (draggedItem.OriginalSlot.allowedType == ItemType.Weapon && allowedType != ItemType.Weapon)
-        {
-            if (player != null)
-            {
-                player.UnequipWeapon();
-                draggedItem.OriginalSlot.SetCurrentItemUI(null);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private bool TryEquipToNewSlot(InventoryItemUI draggedItem)
+    private bool CanEquip(InventoryItemUI draggedItem)
     {
         if (allowedType == ItemType.Armor && draggedItem.Item.itemType == ItemType.Armor)
         {
-            var armor = draggedItem.Item.armorData;
-            if (armor == null || (enforceArmorType && armor.type != allowedArmorType))
-            {
-                return false;
-            }
-
-            if (player == null) return false;
-
-            player.EquipArmor(armor);
-            SetCurrentItemUI(draggedItem);
-            return true;
+            Armor armor = draggedItem.Item.armorData;
+            return player != null && armor != null && (!enforceArmorType || armor.type == allowedArmorType);
         }
 
         if (allowedType == ItemType.Weapon && draggedItem.Item.itemType == ItemType.Weapon)
         {
-            var weapon = draggedItem.Item.weaponData;
-
-            if (weapon == null) return false;
-            if (player == null) return false;
-
-            player.EquipWeapon(weapon);
-            SetCurrentItemUI(draggedItem);
-            return true;
+            return player != null && draggedItem.Item.weaponData != null;
         }
 
-        return true; // Non-equippable types
+        return true; // Non-equippable slot
     }
 
-    private void HandleUIPlacement(InventoryItemUI draggedItem, bool unequipped)
+    private void Equip(InventoryItemUI draggedItem)
     {
-        if (!unequipped && currentItemUI != null && draggedItem.OriginalSlot != null)
+        if (allowedType == ItemType.Armor && draggedItem.Item.itemType == ItemType.Armor)
         {
-            currentItemUI.transform.SetParent(draggedItem.OriginalSlot.transform);
-            draggedItem.OriginalSlot.SetCurrentItemUI(currentItemUI);
-            ResetRectTransform(currentItemUI.transform);
+            player.EquipArmor(draggedItem.Item.armorData);
         }
-
-        draggedItem.transform.SetParent(transform);
-        SetCurrentItemUI(draggedItem);
-        ResetRectTransform(draggedItem.transform);
-    }
-
-    private void ResetRectTransform(Transform trans)
-    {
-        if (trans is RectTransform rect)
+        else if (allowedType == ItemType.Weapon && draggedItem.Item.itemType == ItemType.Weapon)
         {
-            rect.anchoredPosition = Vector2.zero;
+            player.EquipWeapon(draggedItem.Item.weaponData);
         }
     }
 
     /// <summary>
-    /// Clears the slot and unequips the weapon if applicable.
+    /// When an equipped item leaves an equipment slot for a non-equipment slot, takes it off the player.
     /// </summary>
-    public void ClearSlot()
+    private bool TryUnequipFromOriginalSlot(InventoryItemUI draggedItem)
     {
-        if (allowedType == ItemType.Weapon)
+        InventorySlot origin = draggedItem.OriginalSlot;
+        if (origin == null || player == null)
         {
-            if (player == null) return;
+            return false;
+        }
 
+        if (origin.allowedType == ItemType.Armor && allowedType != ItemType.Armor && draggedItem.Item.armorData != null)
+        {
+            player.UnequipArmor(draggedItem.Item.armorData.type);
+        }
+        else if (origin.allowedType == ItemType.Weapon && allowedType != ItemType.Weapon)
+        {
             player.UnequipWeapon();
         }
-        currentItemUI = null;
+        else
+        {
+            return false;
+        }
+
+        origin.SetCurrentItemUI(null);
+        return true;
+    }
+
+    /// <summary>
+    /// Moves the dragged item into this slot, sending any item already here back to the dragged item's origin.
+    /// </summary>
+    private void PlaceItem(InventoryItemUI draggedItem, bool originAlreadyCleared)
+    {
+        InventorySlot origin = draggedItem.OriginalSlot;
+
+        if (!originAlreadyCleared && currentItemUI != null && origin != null)
+        {
+            currentItemUI.transform.SetParent(origin.transform);
+            origin.SetCurrentItemUI(currentItemUI);
+            UIUtils.ResetAnchoredPosition(currentItemUI.transform);
+        }
+
+        draggedItem.transform.SetParent(transform);
+        SetCurrentItemUI(draggedItem);
+        UIUtils.ResetAnchoredPosition(draggedItem.transform);
     }
 }

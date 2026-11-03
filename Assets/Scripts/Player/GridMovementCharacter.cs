@@ -1,16 +1,9 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-public enum MovementDirection
-{
-    Up,
-    Down,
-    Left,
-    Right
-}
-
+/// <summary>
+/// Handles the player's mouse input: moving to adjacent tiles and attacking enemies.
+/// </summary>
 public class GridMovementCharacter : MonoBehaviour
 {
     [Header("Movement Settings")]
@@ -27,60 +20,41 @@ public class GridMovementCharacter : MonoBehaviour
     [Header("Cheat Settings")]
     [SerializeField] private bool tpMode = false;
 
-    private Vector2 targetPosition;
-    private bool isMoving = false;
-    private bool facingLeft = false;
-
+    private GridMover mover;
     private ObstacleTilemap obstacleTilemap;
     private TileSelection tileSelection;
+    private int enemyLayerMask;
 
-    /// <summary>
-    /// Initializes references using the GameObjectLocator
-    /// </summary>
     private void Awake()
     {
+        mover = GetComponent<GridMover>();
+        if (mover == null)
+        {
+            mover = gameObject.AddComponent<GridMover>();
+        }
+
+        enemyLayerMask = LayerMask.GetMask("Enemy");
         InitializeReferences();
     }
 
-    /// <summary>
-    /// Gets necessary references from the GameObjectLocator
-    /// </summary>
     private void InitializeReferences()
     {
-        if (GameObjectLocator.Instance != null)
-        {
-            obstacleTilemap = GameObjectLocator.Instance.ObstacleTilemap;
-            tileSelection = GameObjectLocator.Instance.TileSelection;
-        }
-        else
+        if (GameObjectLocator.Instance == null)
         {
             Debug.LogError("GameObjectLocator not found! Make sure it exists in the scene.", this);
+            return;
         }
+
+        obstacleTilemap = GameObjectLocator.Instance.ObstacleTilemap;
+        tileSelection = GameObjectLocator.Instance.TileSelection;
     }
 
     private void Update()
     {
-        HandleMovementInputs();
-
-        if (animator != null)
+        if (mover.IsMoving || !Input.GetMouseButtonDown(0) || tileSelection == null)
         {
-            animator.SetBool("isWalking", isMoving);
-        }
-    }
-
-    /// <summary>
-    /// Handles all player movement inputs
-    /// </summary>
-    private void HandleMovementInputs()
-    {
-        if (isMoving)
-        {
-            MoveTowardsTarget();
             return;
         }
-
-        if (!Input.GetMouseButtonDown(0))
-            return;
 
         if (tpMode)
         {
@@ -88,19 +62,19 @@ public class GridMovementCharacter : MonoBehaviour
             return;
         }
 
-        HandleNormalMovement();
+        HandleClick();
     }
 
     /// <summary>
-    /// Handles normal player movement (not teleport mode)
+    /// Handles a click on the map: attack an enemy on the tile, or step onto an adjacent free tile.
     /// </summary>
-    private void HandleNormalMovement()
+    private void HandleClick()
     {
-        // Ignore clicks on UI
-        if (EventSystem.current.IsPointerOverGameObject())
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+        {
             return;
+        }
 
-        // Check if it's player's turn and has action points
         if (!CanPlayerAct())
         {
             Debug.Log("Not your turn or no action points.");
@@ -108,171 +82,74 @@ public class GridMovementCharacter : MonoBehaviour
         }
 
         Vector2 targetPos = tileSelection.GetHighlightedTileWorldPosition();
-        Vector2Int clickedTile = GridUtils.WorldToGrid(targetPos);
-        Vector2Int playerGrid = GridUtils.WorldToGrid(transform.position);
 
-        // Check if there's an enemy on the clicked tile
         EnemyHealth enemy = GetEnemyAtPosition(targetPos);
         if (enemy != null)
         {
-            HandleAttackAction(enemy);
+            mover.FaceToward(enemy.transform.position);
+            player.Attack(enemy);
             return;
         }
 
-        // Check if click is on an adjacent tile
-        if (!IsAdjacentTile(clickedTile, playerGrid))
+        Vector2Int clickedTile = GridUtils.WorldToGrid(targetPos);
+        Vector2Int playerTile = GridUtils.WorldToGrid(transform.position);
+
+        if (!GridUtils.IsAdjacent(clickedTile, playerTile))
         {
             Debug.Log("You can only move to adjacent tiles.");
             return;
         }
 
-        // Check if tile is passable
         if (obstacleTilemap.IsTileObstacle(clickedTile))
+        {
             return;
+        }
 
-        // Execute movement
-        HandleMovementAction(clickedTile);
+        MoveToTile(clickedTile);
     }
 
-    /// <summary>
-    /// Checks if the player can act (turn and action points)
-    /// </summary>
     private bool CanPlayerAct()
     {
-        return TurnManager.Instance.PlayerTurn && player.CurrentActionPoints > 0;
+        return TurnManager.Instance != null && TurnManager.Instance.PlayerTurn && player.CurrentActionPoints > 0;
     }
 
-    /// <summary>
-    /// Checks if a tile is adjacent to the player
-    /// </summary>
-    private bool IsAdjacentTile(Vector2Int targetTile, Vector2Int playerTile)
-    {
-        int dx = Mathf.Abs(targetTile.x - playerTile.x);
-        int dy = Mathf.Abs(targetTile.y - playerTile.y);
-        return (dx + dy) == 1;
-    }
-
-    /// <summary>
-    /// Gets the enemy at a specific position
-    /// </summary>
     private EnemyHealth GetEnemyAtPosition(Vector2 position)
     {
-        Collider2D hit = Physics2D.OverlapPoint(position, LayerMask.GetMask("Enemy"));
-        return hit ? hit.GetComponent<EnemyHealth>() : null;
+        Collider2D hit = Physics2D.OverlapPoint(position, enemyLayerMask);
+        return hit != null ? hit.GetComponent<EnemyHealth>() : null;
     }
 
-    /// <summary>
-    /// Handles the attack action against an enemy
-    /// </summary>
-    private void HandleAttackAction(EnemyHealth enemy)
+    private void MoveToTile(Vector2Int tile)
     {
-         FacePosition(enemy.transform.position);
-         player.Attack(enemy);
-    }
-
-    /// <summary>
-    /// Handles the movement action to a tile
-    /// </summary>
-    private void HandleMovementAction(Vector2Int targetTile)
-    {
-        if (player.UseActionPoint())
-        {
-            targetPosition = GridUtils.GridToWorld(targetTile);
-            List<Vector2> path = new() { targetPosition };
-            StartCoroutine(MoveAlongPath(path));
-        }
-        else
+        if (!player.UseActionPoint())
         {
             Debug.Log("Not enough Action Points!");
-        }
-    }
-    private IEnumerator MoveAlongPath(List<Vector2> path)
-    {
-        isMoving = true;
-        int currentWaypointIndex = 0;
-
-        while (currentWaypointIndex < path.Count)
-        {
-            targetPosition = path[currentWaypointIndex];
-
-            if (moveSound != null && audioSource != null)
-            {
-                audioSource.PlayOneShot(moveSound);
-            }
-
-            while ((Vector2)transform.position != targetPosition)
-            {
-                float step = moveSpeed * Time.deltaTime;
-                transform.position = Vector3.MoveTowards(transform.position, targetPosition, step);
-
-                yield return new WaitForFixedUpdate();
-            }
-
-            currentWaypointIndex++;
-        }
-
-        isMoving = false;
-    }
-
-    private void MoveTowardsTarget()
-    {
-        Vector2 direction = (targetPosition - (Vector2)transform.position).normalized;
-
-        if (Mathf.Abs(direction.x) > Mathf.Abs(direction.y))
-        {
-            if (direction.x > 0)
-            {
-                SetFacing(false);
-            }
-            else
-            {
-                SetFacing(true);
-            }
-        }
-        else
-        {
-            if (direction.y > 0)
-            {
-
-            }
-            else
-            {
-
-            }
-        }
-    }
-
-    private void SetFacing(bool left)
-    {
-        if (facingLeft == left)
-        {
             return;
         }
 
-        facingLeft = left;
-        Vector3 scale = transform.localScale;
-        scale.x = facingLeft ? -Mathf.Abs(scale.x) : Mathf.Abs(scale.x);
-        transform.localScale = scale;
+        SetWalking(true);
+        AudioUtils.PlayOneShot(audioSource, moveSound);
+        mover.MoveTo(GridUtils.GridToWorld(tile), moveSpeed, () => SetWalking(false));
     }
 
-    public void FacePosition(Vector2 targetPosition)
+    private void SetWalking(bool isWalking)
     {
-        Vector2 direction = targetPosition - (Vector2)transform.position;
-        if (Mathf.Abs(direction.x) > Mathf.Abs(direction.y))
+        if (animator != null)
         {
-            SetFacing(direction.x < 0);
+            animator.SetBool(AnimatorParams.IsWalking, isWalking);
         }
     }
 
+    /// <summary>
+    /// Cheat mode: instantly moves to the highlighted tile if it is not blocked.
+    /// </summary>
     private void TeleportToTile()
     {
         Vector2 target = tileSelection.GetHighlightedTileWorldPosition();
-        Vector2Int gridPos = GridUtils.WorldToGrid(target);
 
-        if (!obstacleTilemap.IsTileObstacle(gridPos))
+        if (!obstacleTilemap.IsTileObstacle(GridUtils.WorldToGrid(target)))
         {
-            transform.position = target;
-            isMoving = false;
+            mover.Teleport(target);
         }
     }
 }

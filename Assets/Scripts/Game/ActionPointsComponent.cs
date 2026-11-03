@@ -128,7 +128,7 @@ public abstract class ActionPointsComponent : MonoBehaviour
     /// <summary>
     /// Gets the action points percentage (0.0 - 1.0)
     /// </summary>
-    public float ActionPointsPercentage => (float)currentActionPoints / maxActionPoints;
+    public float ActionPointsPercentage => maxActionPoints > 0 ? (float)currentActionPoints / maxActionPoints : 0f;
 
     #region Protected Virtual Methods (For override in derived classes)
     

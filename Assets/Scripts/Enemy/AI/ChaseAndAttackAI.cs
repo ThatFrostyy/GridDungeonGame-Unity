@@ -2,7 +2,8 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 
 /// <summary>
-/// Turn-based enemy AI facade that delegates behavior selection to a state machine.
+/// Turn-based enemy AI: gathers the inspector settings and scene references,
+/// then delegates every decision to the state machine (Patrol, Retreat, Attack, Chase).
 /// </summary>
 [RequireComponent(typeof(EnemyStateMachine))]
 public class ChaseAndAttackAI : EnemyAI
@@ -12,15 +13,15 @@ public class ChaseAndAttackAI : EnemyAI
     [SerializeField] private int spotRange = 3;
     [Tooltip("Health percentage below which the enemy will retreat.")]
     [Range(0f, 1f)] [SerializeField] private float retreatHealth = 0.3f;
+    [Tooltip("Tile size used to draw the spot range gizmo.")]
     [SerializeField] private Vector2 gridSize = new(1f, 1f);
 
     [Header("Combat Settings")]
     [SerializeField] private int attackDamage = 20;
-    [SerializeField] private int attackRange = 1; 
-    [Range(0f, 1f)][SerializeField] private float critChance = 0.2f;
+    [SerializeField] private int attackRange = 1;
+    [Range(0f, 1f)] [SerializeField] private float critChance = 0.2f;
     [SerializeField] private float critMultiplier = 1.5f;
     [SerializeField] private AudioClip critSound;
-
 
     [Header("Sprite Settings")]
     [SerializeField] private Animator animator;
@@ -39,77 +40,60 @@ public class ChaseAndAttackAI : EnemyAI
 
     private EnemyAIContext context;
     private EnemyStateMachine stateMachine;
-    private Player player;
-    private PlayerHealth playerHealth;
-    private Tilemap tilemap;
-    private ObstacleTilemap obstacleTilemap;
 
-    /// <summary>
-    /// Initializes references and behavior states.
-    /// </summary>
+    public override bool IsBusy => context != null && context.IsBusy;
+
     private void Awake()
     {
-        InitializeReferences();
-        InitializeStateMachine();
+        ResolveLocalReferences();
+        CreateStateMachine();
+        ResolveSceneReferences();
     }
 
     /// <summary>
-    /// Gets scene references from the GameObjectLocator.
+    /// Attempts to perform one turn-based AI action through the state machine.
     /// </summary>
-    private void InitializeReferences()
+    public override bool PerformAI()
     {
-        enemy ??= GetComponent<Enemy>();
-        enemyHealth ??= GetComponent<EnemyHealth>();
-        audioSource ??= GetComponent<AudioSource>();
-        animator ??= GetComponentInChildren<Animator>();
+        // Scene references can be created after this enemy awakens (e.g. by the dungeon generator).
+        ResolveSceneReferences();
+        return stateMachine.PerformAction();
+    }
 
-        if (GameObjectLocator.Instance != null)
-        {
-            player = GameObjectLocator.Instance.Player;
-            playerHealth = GameObjectLocator.Instance.GetComponentByTag<PlayerHealth>("Player");
-            obstacleTilemap = GameObjectLocator.Instance.ObstacleTilemap;
-            tilemap = GameObjectLocator.Instance.Tilemap;
-        }
-        else
-        {
-            Debug.LogError("GameObjectLocator not found! Make sure it exists in the scene.", this);
-        }
+    private void ResolveLocalReferences()
+    {
+        // Explicit Unity null checks: '??=' would skip assigning "missing" serialized references.
+        if (enemy == null) enemy = GetComponent<Enemy>();
+        if (enemyHealth == null) enemyHealth = GetComponent<EnemyHealth>();
+        if (audioSource == null) audioSource = GetComponent<AudioSource>();
+        if (animator == null) animator = GetComponentInChildren<Animator>();
     }
 
     /// <summary>
-    /// Creates the runtime state machine. Existing prefabs keep this script attached,
-    /// so the FSM is created from code when the component is missing.
+    /// Builds the runtime state machine. Existing prefabs keep this script attached, so the
+    /// mover is added from code when missing.
     /// </summary>
-    private void InitializeStateMachine()
+    private void CreateStateMachine()
     {
+        if (!TryGetComponent(out GridMover mover))
+        {
+            mover = gameObject.AddComponent<GridMover>();
+        }
+
         stateMachine = GetComponent<EnemyStateMachine>();
-        if (stateMachine == null)
-        {
-            stateMachine = gameObject.AddComponent<EnemyStateMachine>();
-        }
 
-        context = new EnemyAIContext(
-            this,
-            transform,
-            player,
-            playerHealth,
-            enemy,
-            enemyHealth,
-            tilemap,
-            obstacleTilemap,
-            animator,
-            audioSource,
-            moveSound,
-            attackSound,
-            critSound,
+        var config = new EnemyAIConfig(
             moveSpeed,
             spotRange,
             retreatHealth,
-            gridSize,
             attackDamage,
             attackRange,
             critChance,
             critMultiplier);
+
+        var audio = new EnemyAIAudio(moveSound, attackSound, critSound);
+
+        context = new EnemyAIContext(transform, mover, enemy, enemyHealth, animator, audioSource, config, audio);
 
         stateMachine.Initialize(
             context,
@@ -119,22 +103,21 @@ public class ChaseAndAttackAI : EnemyAI
             new ChaseState());
     }
 
-    /// <summary>
-    /// Refreshes scene references that can be created after this component awakens.
-    /// </summary>
-    private void RefreshContextReferences()
+    private void ResolveSceneReferences()
     {
-        InitializeReferences();
-        context?.UpdateSceneReferences(player, playerHealth, tilemap, obstacleTilemap);
-    }
+        GameObjectLocator locator = GameObjectLocator.Instance;
+        if (locator == null)
+        {
+            Debug.LogError("GameObjectLocator not found! Make sure it exists in the scene.", this);
+            return;
+        }
 
-    /// <summary>
-    /// Attempts to perform one turn-based AI action through the state machine.
-    /// </summary>
-    public override bool PerformAI()
-    {
-        RefreshContextReferences();
-        return stateMachine != null && stateMachine.PerformAction();
+        Player player = locator.Player;
+        PlayerHealth playerHealth = locator.GetComponentByTag<PlayerHealth>("Player");
+        Tilemap tilemap = locator.Tilemap;
+        ObstacleTilemap obstacleTilemap = locator.ObstacleTilemap;
+
+        context.SetSceneReferences(player, playerHealth, tilemap, obstacleTilemap);
     }
 
     #region Testing
@@ -152,8 +135,7 @@ public class ChaseAndAttackAI : EnemyAI
             {
                 if (Mathf.Abs(dx) + Mathf.Abs(dy) <= spotRange)
                 {
-                    Vector2Int tile = enemyGrid + new Vector2Int(dx, dy);
-                    Vector2 worldPos = GridUtils.GridToWorld(tile);
+                    Vector2 worldPos = GridUtils.GridToWorld(enemyGrid + new Vector2Int(dx, dy));
                     Gizmos.DrawWireCube(worldPos, new Vector3(gridSize.x, gridSize.y, 0.1f));
                 }
             }

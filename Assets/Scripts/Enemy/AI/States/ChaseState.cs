@@ -7,11 +7,11 @@ public sealed class ChaseState : EnemyState
 
     public override bool ShouldEnter()
     {
-        return Context != null && !Context.IsPlayerOutsideSpotRange;
+        return Context.CanAct && !Context.IsPlayerOutsideSpotRange;
     }
 
     public override bool PerformAction()
     {
-        return Context != null && Context.TryChasePlayer();
+        return Context.CanAct && Context.TryStepTowardPlayer();
     }
 }

@@ -1,102 +1,70 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
 /// <summary>
-/// Shared data and reusable actions for enemy AI states.
+/// Shared data and low-level actions that enemy AI states build their behavior on.
+/// Decision making lives in the states; this class only answers questions and performs primitives.
 /// </summary>
 public sealed class EnemyAIContext
 {
-    private static readonly Vector2Int[] CardinalDirections =
-    {
-        Vector2Int.up,
-        Vector2Int.down,
-        Vector2Int.left,
-        Vector2Int.right,
-    };
-
-    private readonly MonoBehaviour coroutineHost;
     private readonly Transform self;
+    private readonly GridMover mover;
     private readonly Animator animator;
     private readonly AudioSource audioSource;
-    private readonly AudioClip moveSound;
-    private readonly AudioClip attackSound;
-    private readonly AudioClip critSound;
-    private readonly float moveSpeed;
-    private readonly float retreatHealth;
-    private readonly Vector2 gridSize;
-    private readonly int attackDamage;
-    private readonly int attackRange;
-    private readonly float critChance;
-    private readonly float critMultiplier;
 
     private Player player;
     private PlayerHealth playerHealth;
     private Tilemap tilemap;
     private ObstacleTilemap obstacleTilemap;
-    private bool isMoving;
+    private int enemyLayerMask = -1;
 
     public EnemyAIContext(
-        MonoBehaviour coroutineHost,
         Transform self,
-        Player player,
-        PlayerHealth playerHealth,
+        GridMover mover,
         Enemy enemy,
         EnemyHealth enemyHealth,
-        Tilemap tilemap,
-        ObstacleTilemap obstacleTilemap,
         Animator animator,
         AudioSource audioSource,
-        AudioClip moveSound,
-        AudioClip attackSound,
-        AudioClip critSound,
-        float moveSpeed,
-        int spotRange,
-        float retreatHealth,
-        Vector2 gridSize,
-        int attackDamage,
-        int attackRange,
-        float critChance,
-        float critMultiplier)
+        EnemyAIConfig config,
+        EnemyAIAudio audio)
     {
-        this.coroutineHost = coroutineHost;
         this.self = self;
-        this.player = player;
-        this.playerHealth = playerHealth;
-        Enemy = enemy;
-        EnemyHealth = enemyHealth;
-        this.tilemap = tilemap;
-        this.obstacleTilemap = obstacleTilemap;
+        this.mover = mover;
         this.animator = animator;
         this.audioSource = audioSource;
-        this.moveSound = moveSound;
-        this.attackSound = attackSound;
-        this.critSound = critSound;
-        this.moveSpeed = moveSpeed;
-        SpotRange = spotRange;
-        this.retreatHealth = retreatHealth;
-        this.gridSize = gridSize;
-        this.attackDamage = attackDamage;
-        this.attackRange = attackRange;
-        this.critChance = critChance;
-        this.critMultiplier = critMultiplier;
+        Enemy = enemy;
+        EnemyHealth = enemyHealth;
+        Config = config;
+        Audio = audio;
     }
 
     public Enemy Enemy { get; }
     public EnemyHealth EnemyHealth { get; }
-    public int SpotRange { get; }
-    public bool IsBusy => isMoving;
+    public EnemyAIConfig Config { get; }
+    public EnemyAIAudio Audio { get; }
+    public PlayerHealth PlayerHealth => playerHealth;
+    public Vector2 PlayerPosition => player.transform.position;
 
-    public bool CanAct => !isMoving && player != null && Enemy != null && EnemyHealth != null && Enemy.IsAlive;
-    public bool IsPlayerOutsideSpotRange => CanAct && DistanceToPlayer() > SpotRange;
-    public bool ShouldRetreat => CanAct && EnemyHealth.HealthPercentage < retreatHealth;
-    public bool IsPlayerInAttackRange => CanAct && DistanceToPlayer() <= attackRange;
+    public bool IsBusy => mover.IsMoving;
+    public bool CanAct => !IsBusy && player != null && Enemy != null && EnemyHealth != null && Enemy.IsAlive;
+
+    public bool IsPlayerOutsideSpotRange => CanAct && DistanceToPlayer() > Config.SpotRange;
+    public bool IsPlayerInAttackRange => CanAct && DistanceToPlayer() <= Config.AttackRange;
+    public bool ShouldRetreat => CanAct && EnemyHealth.HealthPercentage < Config.RetreatHealth;
+
+    public Vector2Int GridPosition => GridUtils.WorldToGrid(self.position);
+    public Vector2Int PlayerGridPosition => GridUtils.WorldToGrid(player.transform.position);
+
+    public int DistanceToPlayer()
+    {
+        return GridUtils.ManhattanDistance(GridPosition, PlayerGridPosition);
+    }
 
     /// <summary>
-    /// Updates references that can become available after Awake execution order.
+    /// Updates scene references that may only become available after this enemy awakens.
     /// </summary>
-    public void UpdateSceneReferences(Player player, PlayerHealth playerHealth, Tilemap tilemap, ObstacleTilemap obstacleTilemap)
+    public void SetSceneReferences(Player player, PlayerHealth playerHealth, Tilemap tilemap, ObstacleTilemap obstacleTilemap)
     {
         this.player = player;
         this.playerHealth = playerHealth;
@@ -105,234 +73,105 @@ public sealed class EnemyAIContext
     }
 
     /// <summary>
-    /// Tries random adjacent movement while the player is outside spotting range.
+    /// True if the tile is on the map, free of obstacles and not occupied by the player or another enemy.
     /// </summary>
-    public bool TryPatrol()
-    {
-        if (!CanAct)
-        {
-            return false;
-        }
-
-        Vector2Int enemyGrid = CurrentGridPosition();
-
-        for (int attempt = 0; attempt < 3; attempt++)
-        {
-            Vector2Int direction = CardinalDirections[Random.Range(0, CardinalDirections.Length)];
-            if (TryMoveToGridPosition(enemyGrid + direction))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// Moves to the adjacent tile that maximizes distance from the player.
-    /// </summary>
-    public bool TryRetreat()
-    {
-        if (!CanAct)
-        {
-            return false;
-        }
-
-        Vector2Int enemyGrid = CurrentGridPosition();
-        Vector2Int playerGrid = PlayerGridPosition();
-        Vector2Int bestTile = enemyGrid;
-        int bestDistance = ManhattanDistance(enemyGrid, playerGrid);
-
-        foreach (Vector2Int direction in CardinalDirections)
-        {
-            Vector2Int candidate = enemyGrid + direction;
-            if (candidate == playerGrid || !IsWalkable(candidate))
-            {
-                continue;
-            }
-
-            int distance = ManhattanDistance(candidate, playerGrid);
-            if (distance > bestDistance)
-            {
-                bestDistance = distance;
-                bestTile = candidate;
-            }
-        }
-
-        return bestTile != enemyGrid && TryMoveToGridPosition(bestTile);
-    }
-
-    /// <summary>
-    /// Moves one tile along an A* path toward the player.
-    /// </summary>
-    public bool TryChasePlayer()
-    {
-        if (!CanAct)
-        {
-            return false;
-        }
-
-        Vector2 startPosition = GridUtils.GridToWorld(CurrentGridPosition());
-        Vector2 targetPosition = GridUtils.GridToWorld(PlayerGridPosition());
-        List<Vector2> path = AStar.FindPath(startPosition, targetPosition, gridSize, IsObstacle);
-
-        if (path == null || path.Count <= 1)
-        {
-            return false;
-        }
-
-        Vector2 nextPosition = path[1];
-        if (GridUtils.WorldToGrid(nextPosition) == PlayerGridPosition())
-        {
-            return false;
-        }
-
-        FacePosition(nextPosition);
-        return StartMove(nextPosition);
-    }
-
-    /// <summary>
-    /// Attacks the player and applies critical-hit modifiers.
-    /// </summary>
-    public bool TryAttackPlayer()
-    {
-        if (!CanAct || playerHealth == null || !IsPlayerInAttackRange)
-        {
-            return false;
-        }
-
-        FacePosition(player.transform.position);
-
-        int finalDamage = attackDamage;
-        bool isCriticalHit = Random.value < critChance;
-
-        if (isCriticalHit)
-        {
-            finalDamage = Mathf.RoundToInt(attackDamage * critMultiplier);
-            PlayOneShot(critSound, randomizePitch: false);
-        }
-        else
-        {
-            PlayOneShot(attackSound, randomizePitch: true);
-        }
-
-        playerHealth.TakeDamage(finalDamage);
-
-        if (animator != null)
-        {
-            animator.SetTrigger("Attack");
-        }
-
-        return true;
-    }
-
-    private Vector2Int CurrentGridPosition()
-    {
-        return GridUtils.WorldToGrid(self.position);
-    }
-
-    private Vector2Int PlayerGridPosition()
-    {
-        return GridUtils.WorldToGrid(player.transform.position);
-    }
-
-    private int DistanceToPlayer()
-    {
-        return ManhattanDistance(CurrentGridPosition(), PlayerGridPosition());
-    }
-
-    private static int ManhattanDistance(Vector2Int a, Vector2Int b)
-    {
-        return Mathf.Abs(a.x - b.x) + Mathf.Abs(a.y - b.y);
-    }
-
-    private bool TryMoveToGridPosition(Vector2Int gridPosition)
-    {
-        if (!IsWalkable(gridPosition))
-        {
-            return false;
-        }
-
-        return StartMove(GridUtils.GridToWorld(gridPosition));
-    }
-
-    private bool IsWalkable(Vector2Int gridPosition)
+    public bool IsWalkable(Vector2Int gridPosition)
     {
         if (tilemap != null && !tilemap.HasTile(new Vector3Int(gridPosition.x, gridPosition.y, 0)))
         {
             return false;
         }
 
-        return !IsObstacle(GridUtils.GridToWorld(gridPosition));
-    }
-
-    private bool IsObstacle(Vector2 position)
-    {
-        return obstacleTilemap != null && obstacleTilemap.IsTileObstacle(position);
-    }
-
-    private bool StartMove(Vector2 targetPosition)
-    {
-        if (coroutineHost == null || isMoving)
+        if (gridPosition == PlayerGridPosition)
         {
             return false;
         }
 
-        coroutineHost.StartCoroutine(MoveAlongPath(targetPosition));
-        return true;
+        Vector2 worldPosition = GridUtils.GridToWorld(gridPosition);
+        return !IsObstacle(worldPosition) && !IsOccupiedByOtherEnemy(worldPosition);
     }
 
-    private IEnumerator MoveAlongPath(Vector2 targetPosition)
+    public bool IsObstacle(Vector2 worldPosition)
     {
-        isMoving = true;
-        SetWalkingAnimation(true);
-        PlayOneShot(moveSound, randomizePitch: false);
+        return obstacleTilemap != null && obstacleTilemap.IsTileObstacle(worldPosition);
+    }
 
-        while ((Vector2)self.position != targetPosition)
+    /// <summary>
+    /// Starts walking to a tile if it is walkable.
+    /// </summary>
+    public bool TryMoveTo(Vector2Int gridPosition)
+    {
+        return IsWalkable(gridPosition) && StartMove(GridUtils.GridToWorld(gridPosition));
+    }
+
+    /// <summary>
+    /// Starts moving one tile along an A* path toward the player.
+    /// </summary>
+    public bool TryStepTowardPlayer()
+    {
+        List<Vector2> path = AStar.FindPath(
+            GridUtils.GridToWorld(GridPosition),
+            GridUtils.GridToWorld(PlayerGridPosition),
+            IsObstacle);
+
+        if (path == null || path.Count <= 1)
         {
-            float step = moveSpeed * Time.deltaTime;
-            self.position = Vector3.MoveTowards(self.position, targetPosition, step);
-            yield return new WaitForFixedUpdate();
+            return false;
         }
 
-        SetWalkingAnimation(false);
-        isMoving = false;
+        return TryMoveTo(GridUtils.WorldToGrid(path[1]));
     }
 
-    private void SetWalkingAnimation(bool isWalking)
+    public void FacePosition(Vector2 worldPosition)
+    {
+        mover.FaceToward(worldPosition);
+    }
+
+    public void PlaySound(AudioClip clip, bool randomizePitch = false)
+    {
+        AudioUtils.PlayOneShot(audioSource, clip, randomizePitch);
+    }
+
+    public void TriggerAttackAnimation()
     {
         if (animator != null)
         {
-            animator.SetBool("isWalking", isWalking);
+            animator.SetTrigger(AnimatorParams.Attack);
         }
     }
 
-    private void FacePosition(Vector2 targetPosition)
+    private bool StartMove(Vector2 targetPosition)
     {
-        Vector2 direction = (targetPosition - (Vector2)self.position).normalized;
-        if (Mathf.Abs(direction.x) <= 0.01f)
+        if (!mover.MoveTo(targetPosition, Config.MoveSpeed, OnMoveFinished))
         {
-            return;
+            return false;
         }
 
-        Vector3 scale = self.localScale;
-        scale.x = direction.x < 0 ? -Mathf.Abs(scale.x) : Mathf.Abs(scale.x);
-        self.localScale = scale;
+        if (animator != null)
+        {
+            animator.SetBool(AnimatorParams.IsWalking, true);
+        }
+
+        PlaySound(Audio.Move);
+        return true;
     }
 
-    private void PlayOneShot(AudioClip clip, bool randomizePitch)
+    private void OnMoveFinished()
     {
-        if (audioSource == null || clip == null)
+        if (animator != null)
         {
-            return;
+            animator.SetBool(AnimatorParams.IsWalking, false);
+        }
+    }
+
+    private bool IsOccupiedByOtherEnemy(Vector2 worldPosition)
+    {
+        if (enemyLayerMask < 0)
+        {
+            enemyLayerMask = LayerMask.GetMask("Enemy");
         }
 
-        if (randomizePitch)
-        {
-            audioSource.pitch = Random.Range(0.8f, 1.2f);
-        }
-
-        audioSource.PlayOneShot(clip);
-        audioSource.pitch = 1f;
+        Collider2D hit = Physics2D.OverlapPoint(worldPosition, enemyLayerMask);
+        return hit != null && !hit.transform.IsChildOf(self);
     }
 }

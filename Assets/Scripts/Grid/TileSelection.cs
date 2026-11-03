@@ -1,82 +1,63 @@
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
+/// <summary>
+/// Moves a highlight marker to the walkable tile under the mouse cursor.
+/// </summary>
 public class TileSelection : MonoBehaviour
-{   
-    [SerializeField] private Vector2 gridSize = new(1, 1);
-
+{
     private Vector2Int highlightedTilePosition = Vector2Int.zero;
 
     private Tilemap tilemap;
     private Tilemap obstacleTilemap;
+    private Camera mainCamera;
 
-    private void Awake()
+    public Vector2Int HighlightedTilePosition => highlightedTilePosition;
+
+    // Start (not Awake) so the GameObjectLocator is guaranteed to exist.
+    private void Start()
     {
-        GameObject tilemapObject = GameObject.FindGameObjectWithTag("Tilemap");
-        GameObject obstacleTilemapObject = GameObject.FindGameObjectWithTag("ObstacleTilemap");
-        if (tilemapObject != null)
+        mainCamera = Camera.main;
+
+        if (GameObjectLocator.Instance == null)
         {
-            tilemap = tilemapObject.GetComponent<Tilemap>();
+            Debug.LogError("GameObjectLocator not found! Make sure it exists in the scene.", this);
+            return;
         }
-        else
+
+        tilemap = GameObjectLocator.Instance.Tilemap;
+        obstacleTilemap = GameObjectLocator.Instance.ObstacleTilemapMap;
+
+        if (tilemap == null)
         {
-             Debug.LogWarning("Tilemap not found. Ensure a Tilemap with the 'Tilemap' tag exists in the scene.");
+            Debug.LogWarning("Tilemap not found. Ensure a Tilemap with the 'Tilemap' tag exists in the scene.", this);
         }
-        if (obstacleTilemapObject != null)
+
+        if (obstacleTilemap == null)
         {
-            obstacleTilemap = obstacleTilemapObject.GetComponent<Tilemap>();
-        }
-        else
-        {
-            Debug.LogWarning("ObstacleTilemap not found. Ensure a Tilemap with the 'ObstacleTilemap' tag exists in the scene.");
+            Debug.LogWarning("ObstacleTilemap not found. Ensure a Tilemap with the 'ObstacleTilemap' tag exists in the scene.", this);
         }
     }
 
     private void Update()
     {
-        Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        Vector2Int gridPos = new(
-            Mathf.FloorToInt(mouseWorldPos.x / gridSize.x) * Mathf.RoundToInt(gridSize.x),
-            Mathf.FloorToInt(mouseWorldPos.y / gridSize.y) * Mathf.RoundToInt(gridSize.y)
-        );
-
-        bool isObstacleTile = false;
-        if (obstacleTilemap != null)
+        if (mainCamera == null)
         {
-            Vector3Int cellPos = obstacleTilemap.WorldToCell(mouseWorldPos);
-            if (obstacleTilemap.HasTile(cellPos) && obstacleTilemap.GetTile(cellPos) != null)
+            mainCamera = Camera.main;
+            if (mainCamera == null)
             {
-                isObstacleTile = true;
+                return;
             }
         }
 
-        bool isNormalTile = false;
-        if (tilemap != null)
-        {
-            Vector3Int cellPos = tilemap.WorldToCell(mouseWorldPos);
-            if (tilemap.HasTile(cellPos) && tilemap.GetTile(cellPos) != null)
-            {
-                isNormalTile = true;
-            }
-        }
+        Vector2 mouseWorldPos = mainCamera.ScreenToWorldPoint(Input.mousePosition);
+        Vector2Int gridPos = GridUtils.WorldToGrid(mouseWorldPos);
 
-        if (!isObstacleTile && isNormalTile)
+        if (HasTileAt(tilemap, mouseWorldPos) && !HasTileAt(obstacleTilemap, mouseWorldPos))
         {
             highlightedTilePosition = gridPos;
-            Vector2 worldPos = GridUtils.GridToWorld(gridPos);
-            transform.position = worldPos;
+            transform.position = GridUtils.GridToWorld(gridPos);
         }
-    }
-
-    public Vector2Int HighlightedTilePosition
-    {
-        get { return highlightedTilePosition; }
-    }
-
-    public bool IsHighlightedTileClicked(Vector2 clickedPosition)
-    {
-        Vector2Int gridPos = GridUtils.WorldToGrid(clickedPosition);
-        return gridPos == highlightedTilePosition;
     }
 
     public Vector2 GetHighlightedTileWorldPosition()
@@ -84,16 +65,8 @@ public class TileSelection : MonoBehaviour
         return GridUtils.GridToWorld(highlightedTilePosition);
     }
 
-    public bool IsTileObstacle(Vector2Int position)
+    private static bool HasTileAt(Tilemap map, Vector2 worldPosition)
     {
-        Vector3 worldPos = GridUtils.GridToWorld(position);
-        RaycastHit2D hit = Physics2D.Raycast(worldPos, Vector2.zero);
-
-        if (hit.collider != null)
-        {
-            return true;
-        }
-
-        return false;
+        return map != null && map.HasTile(map.WorldToCell(worldPosition));
     }
 }
