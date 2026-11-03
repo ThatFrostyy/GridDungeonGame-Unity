@@ -2,7 +2,9 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Selects and runs the active state for an enemy AI turn.
+/// Picks and runs the active state for an enemy AI turn.
+/// States are evaluated in priority order; if the first applicable state cannot act
+/// (e.g. a retreating enemy is cornered), the next applicable one gets a chance.
 /// </summary>
 [DisallowMultipleComponent]
 public sealed class EnemyStateMachine : MonoBehaviour
@@ -16,16 +18,16 @@ public sealed class EnemyStateMachine : MonoBehaviour
     public string CurrentStateName => currentStateName;
 
     /// <summary>
-    /// Configures this state machine with priority-ordered states.
+    /// Configures the machine with priority-ordered states.
     /// </summary>
-    public void Initialize(EnemyAIContext context, params EnemyState[] states)
+    public void Initialize(EnemyAIContext context, params EnemyState[] priorityOrderedStates)
     {
         this.context = context;
-        this.states.Clear();
+        states.Clear();
         currentState = null;
         currentStateName = "None";
 
-        foreach (EnemyState state in states)
+        foreach (EnemyState state in priorityOrderedStates)
         {
             if (state == null)
             {
@@ -33,12 +35,12 @@ public sealed class EnemyStateMachine : MonoBehaviour
             }
 
             state.Initialize(context);
-            this.states.Add(state);
+            states.Add(state);
         }
     }
 
     /// <summary>
-    /// Selects a state and performs one action for the enemy turn.
+    /// Performs one action for the enemy turn. Returns false if no state could act.
     /// </summary>
     public bool PerformAction()
     {
@@ -47,27 +49,21 @@ public sealed class EnemyStateMachine : MonoBehaviour
             return false;
         }
 
-        EnemyState nextState = GetNextState();
-        if (nextState == null)
-        {
-            return false;
-        }
-
-        ChangeState(nextState);
-        return currentState.PerformAction();
-    }
-
-    private EnemyState GetNextState()
-    {
         foreach (EnemyState state in states)
         {
-            if (state.ShouldEnter())
+            if (!state.ShouldEnter())
             {
-                return state;
+                continue;
+            }
+
+            ChangeState(state);
+            if (state.PerformAction())
+            {
+                return true;
             }
         }
 
-        return null;
+        return false;
     }
 
     private void ChangeState(EnemyState nextState)
@@ -79,7 +75,7 @@ public sealed class EnemyStateMachine : MonoBehaviour
 
         currentState?.Exit();
         currentState = nextState;
-        currentStateName = currentState.Name;
+        currentStateName = nextState.Name;
         currentState.Enter();
     }
 }

@@ -1,5 +1,8 @@
 using UnityEngine;
 
+/// <summary>
+/// Owns the inventory slots and toggles the inventory window.
+/// </summary>
 public class InventoryManager : MonoBehaviour
 {
     [Header("Inventory Slots")]
@@ -8,7 +11,7 @@ public class InventoryManager : MonoBehaviour
     [SerializeField] private InventorySlot bodySlot;
     [SerializeField] private InventorySlot weaponSlot;
     [SerializeField] private InventorySlot shieldSlot;
-    [SerializeField] private GameObject inventoryUI; 
+    [SerializeField] private GameObject inventoryUI;
 
     [Header("Prefabs")]
     public InventoryItemUI itemUIPrefab;
@@ -21,12 +24,14 @@ public class InventoryManager : MonoBehaviour
 
     private void Awake()
     {
-        if (isTesting)
+        if (!isTesting)
         {
-            AddItemToInventory(testItem);
-            AddItemToInventory(testItem1);
-            AddItemToInventory(testItem2);
+            return;
         }
+
+        AddItemToInventory(testItem);
+        AddItemToInventory(testItem1);
+        AddItemToInventory(testItem2);
     }
 
     private void Start()
@@ -45,19 +50,31 @@ public class InventoryManager : MonoBehaviour
         }
     }
 
-    public void AddItemToInventory(InventoryItem item)
+    /// <summary>
+    /// Puts an item into the first free inventory slot. Returns false if there is no room.
+    /// </summary>
+    public bool AddItemToInventory(InventoryItem item)
     {
-        foreach (var slot in inventorySlots)
+        if (item == null || itemUIPrefab == null)
         {
-            if (slot.CurrentItemUI == null)
-            {
-                var itemUI = Instantiate(itemUIPrefab, slot.transform);
-                itemUI.Setup(item);
-
-                slot.SetCurrentItemUI(itemUI);
-                break;
-            }
+            return false;
         }
+
+        foreach (InventorySlot slot in inventorySlots)
+        {
+            if (slot.CurrentItemUI != null)
+            {
+                continue;
+            }
+
+            InventoryItemUI itemUI = Instantiate(itemUIPrefab, slot.transform);
+            itemUI.Setup(item);
+            slot.SetCurrentItemUI(itemUI);
+            return true;
+        }
+
+        Debug.LogWarning($"Inventory is full, could not add {item.itemName}.", this);
+        return false;
     }
 
     public void ToggleInventory()

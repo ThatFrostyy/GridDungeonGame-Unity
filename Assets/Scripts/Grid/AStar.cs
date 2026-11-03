@@ -1,130 +1,114 @@
-using UnityEngine;
+using System;
 using System.Collections.Generic;
+using UnityEngine;
+
+/// <summary>
+/// 4-directional A* pathfinding on the tile grid.
+/// </summary>
 public static class AStar
 {
-    private static Vector2 gridSize;
+    // The map has no hard bounds, so unreachable targets must not search forever.
+    private const int MaxExpandedNodes = 2048;
 
-    private class Node
+    private sealed class Node
     {
         public Vector2Int Position;
         public Node Parent;
-        public int GCost; // Cost from start to this node
-        public int HCost; // Heuristic cost to end node
-        public int FCost => GCost + HCost; // Total cost
-        public bool isObstacle;
-
-        public Node(Vector2Int position, Node parent, int gCost, int hCost, bool isObstacle)
-        {
-            this.Position = position;
-            this.Parent = parent;
-            this.GCost = gCost;
-            this.HCost = hCost;
-            this.isObstacle = isObstacle;
-        }
+        public int GCost;
+        public int HCost;
+        public int FCost => GCost + HCost;
     }
 
-    public static List<Vector2> FindPath(Vector2 start, Vector2 target, Vector2 gridCellSize, System.Func<Vector2, bool>isObstacle)
+    /// <summary>
+    /// Finds a path from start to target, both inclusive, as tile-center world positions.
+    /// Returns null if the target cannot be reached.
+    /// </summary>
+    public static List<Vector2> FindPath(Vector2 start, Vector2 target, Func<Vector2, bool> isObstacle)
     {
-        gridSize = gridCellSize;
+        Vector2Int startGrid = GridUtils.WorldToGrid(start);
+        Vector2Int targetGrid = GridUtils.WorldToGrid(target);
 
-        Vector2Int startGridPos = GridUtils.WorldToGrid(start);
-        Vector2Int targetGridPos = GridUtils.WorldToGrid(target);
+        var open = new List<Node>();
+        var openLookup = new Dictionary<Vector2Int, Node>();
+        var closed = new HashSet<Vector2Int>();
 
-        List<Node> openList = new List<Node>();
-        HashSet<Vector2Int> closedList = new HashSet<Vector2Int>();
+        var startNode = new Node { Position = startGrid, HCost = GridUtils.ManhattanDistance(startGrid, targetGrid) };
+        open.Add(startNode);
+        openLookup[startGrid] = startNode;
 
-        Node startNode = new Node(startGridPos, null, 0, CalculateHCost(startGridPos, targetGridPos), false);
-        openList.Add(startNode);
-
-        while (openList.Count > 0)
+        while (open.Count > 0 && closed.Count < MaxExpandedNodes)
         {
-            Node currentNode = GetLowestFCostNode(openList);
+            Node current = PopLowestCost(open);
+            openLookup.Remove(current.Position);
+            closed.Add(current.Position);
 
-            openList.Remove(currentNode);
-            closedList.Add(currentNode.Position);
-
-            if (currentNode.Position == targetGridPos)
+            if (current.Position == targetGrid)
             {
-                return GeneratePath(currentNode);
+                return BuildPath(current);
             }
 
-            foreach (Vector2Int adjacentPos in GetAdjacentPositions(currentNode.Position))
+            foreach (Vector2Int direction in GridUtils.CardinalDirections)
             {
-                if (closedList.Contains(adjacentPos) || isObstacle(GridUtils.GridToWorld(adjacentPos)))
+                Vector2Int neighbour = current.Position + direction;
+                if (closed.Contains(neighbour) || isObstacle(GridUtils.GridToWorld(neighbour)))
                 {
-                    continue; // Skip already evaluated nodes and obstacles
+                    continue;
                 }
-                
-                int gCost = currentNode.GCost + 1; // Assuming uniform cost for each step
-                int hCost = CalculateHCost(adjacentPos, targetGridPos);
 
-                Node adjacentNode = new Node(adjacentPos, currentNode, gCost, hCost, false);
-
-                int index = openList.FindIndex(node => node.Position == adjacentNode.Position);
-                if (index != -1)
+                int gCost = current.GCost + 1;
+                if (openLookup.TryGetValue(neighbour, out Node existing))
                 {
-                    // If the node is already in the open list, check if this path is better
-                    if (gCost < openList[index].GCost)
+                    if (gCost < existing.GCost)
                     {
-                        openList[index].Parent = currentNode;
-                        openList[index].GCost = gCost;
+                        existing.GCost = gCost;
+                        existing.Parent = current;
                     }
+                    continue;
                 }
-                else
+
+                var node = new Node
                 {
-                    // If not in open list, add it
-                    openList.Add(adjacentNode);
-                }
+                    Position = neighbour,
+                    Parent = current,
+                    GCost = gCost,
+                    HCost = GridUtils.ManhattanDistance(neighbour, targetGrid),
+                };
+                open.Add(node);
+                openLookup[neighbour] = node;
             }
         }
-         
-        return null; // No path found
+
+        return null;
     }
 
-    private static Node GetLowestFCostNode(List<Node> nodes)
+    private static Node PopLowestCost(List<Node> nodes)
     {
-        Node lowest = nodes[0];
-     
+        int best = 0;
         for (int i = 1; i < nodes.Count; i++)
         {
-            if (nodes[i].FCost < lowest.FCost || (nodes[i].FCost == lowest.FCost && nodes[i].HCost < lowest.HCost))
+            Node candidate = nodes[i];
+            Node lowest = nodes[best];
+            if (candidate.FCost < lowest.FCost || (candidate.FCost == lowest.FCost && candidate.HCost < lowest.HCost))
             {
-                lowest = nodes[i];
+                best = i;
             }
         }
-        
-        return lowest;
+
+        Node result = nodes[best];
+        nodes[best] = nodes[nodes.Count - 1];
+        nodes.RemoveAt(nodes.Count - 1);
+        return result;
     }
 
-    private static int CalculateHCost(Vector2Int current, Vector2Int target)
+    private static List<Vector2> BuildPath(Node end)
     {
-        // Using Manhattan distance as heuristic
-        return Mathf.Abs(current.x - target.x) + Mathf.Abs(current.y - target.y);
-    }
-
-    private static List<Vector2> GeneratePath(Node endNode)
-    {
-        List<Vector2> path = new List<Vector2>();
-        Node currentNode = endNode;
-
-        while (currentNode != null)
+        var path = new List<Vector2>();
+        for (Node node = end; node != null; node = node.Parent)
         {
-            path.Add(GridUtils.GridToWorld(currentNode.Position));
-            currentNode = currentNode.Parent;
+            path.Add(GridUtils.GridToWorld(node.Position));
         }
 
-        path.Reverse(); // Reverse the path to get it from start to end
+        path.Reverse();
         return path;
-    }
-
-    private static List<Vector2Int> GetAdjacentPositions(Vector2Int position)
-    {
-        return new List<Vector2Int>
-        {
-            position + Vector2Int.up,
-            position + Vector2Int.down,
-            position + Vector2Int.left,
-            position + Vector2Int.right,    
-        };
     }
 }

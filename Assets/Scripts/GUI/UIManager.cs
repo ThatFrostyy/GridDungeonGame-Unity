@@ -1,8 +1,10 @@
 using TMPro;
 using UnityEngine;
-using UnityEngine.Tilemaps;
 using UnityEngine.UI;
 
+/// <summary>
+/// Updates the player HUD (health bar and action points).
+/// </summary>
 public class UIManager : MonoBehaviour
 {
     [Header("References")]
@@ -16,27 +18,30 @@ public class UIManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
+            return;
         }
 
-        if (GameObjectLocator.Instance != null)
-        {
-            playerHealth = GameObjectLocator.Instance.GetComponentByTag<PlayerHealth>("Player");
+        Instance = this;
+    }
 
-        }
-        else
+    // Start (not Awake) so the locator and the player's health have been initialized.
+    private void Start()
+    {
+        if (GameObjectLocator.Instance == null)
         {
             Debug.LogError("GameObjectLocator not found! Make sure it exists in the scene.", this);
+            return;
         }
 
-        SetupPlayerHealthBar();
+        playerHealth = GameObjectLocator.Instance.GetComponentByTag<PlayerHealth>("Player");
+        if (playerHealth != null)
+        {
+            playerHealth.OnHealthChanged += UpdateHealthBar;
+            UpdateHealthBar(playerHealth.CurrentHealth, playerHealth.MaxHealth);
+        }
     }
 
     private void OnDestroy()
@@ -45,17 +50,10 @@ public class UIManager : MonoBehaviour
         {
             playerHealth.OnHealthChanged -= UpdateHealthBar;
         }
-    }
 
-    /// <summary>
-    /// Sets up the player health bar if components are assigned
-    /// </summary>
-    private void SetupPlayerHealthBar()
-    {
-        if (playerHealth != null)
+        if (Instance == this)
         {
-            playerHealth.OnHealthChanged += UpdateHealthBar;
-            UpdateHealthBar(playerHealth.CurrentHealth, playerHealth.MaxHealth);
+            Instance = null;
         }
     }
 
@@ -71,7 +69,11 @@ public class UIManager : MonoBehaviour
     {
         if (healthBarFill != null)
         {
-            healthBarFill.fillAmount = (float)current / max;
+            healthBarFill.fillAmount = max > 0 ? (float)current / max : 0f;
+        }
+
+        if (healthText != null)
+        {
             healthText.text = $"{current}/{max}";
         }
     }

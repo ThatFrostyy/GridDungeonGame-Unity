@@ -14,6 +14,14 @@ public abstract class EnemyState
 
     public virtual void Enter() { }
     public virtual void Exit() { }
+
+    /// <summary>
+    /// Whether this state applies to the enemy's current situation.
+    /// </summary>
     public abstract bool ShouldEnter();
+
+    /// <summary>
+    /// Performs one action. Returns false if nothing could be done, letting the next state try.
+    /// </summary>
     public abstract bool PerformAction();
 }

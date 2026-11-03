@@ -13,19 +13,15 @@ public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     [SerializeField] private Transform originalParent;
 
     /// <summary>
-    /// Gets the inventory item data this UI element represents.
+    /// The inventory item data this UI element represents.
     /// </summary>
     public InventoryItem Item => item;
 
     /// <summary>
-    /// Gets the original slot the item was in before dragging.
+    /// The slot the item was in before dragging.
     /// </summary>
     public InventorySlot OriginalSlot { get; private set; }
 
-    /// <summary>
-    /// Initializes the item UI with given item data.
-    /// </summary>
-    /// <param name="itemData">Inventory item data.</param>
     public void Setup(InventoryItem itemData)
     {
         item = itemData;
@@ -33,59 +29,30 @@ public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         image.preserveAspect = true;
     }
 
-    /// <summary>
-    /// Called when drag operation starts.
-    /// </summary>
-    /// <param name="eventData">Pointer event data.</param>
     public void OnBeginDrag(PointerEventData eventData)
     {
-        OriginalSlot = transform.parent.GetComponent<InventorySlot>();
         originalParent = transform.parent;
+        OriginalSlot = originalParent.GetComponent<InventorySlot>();
         canvasGroup.blocksRaycasts = false;
         transform.SetParent(transform.root);
     }
 
-    /// <summary>
-    /// Called while dragging the item.
-    /// </summary>
-    /// <param name="eventData">Pointer event data.</param>
     public void OnDrag(PointerEventData eventData)
     {
         transform.position = eventData.position;
     }
 
-    /// <summary>
-    /// Called when the drag operation ends.
-    /// </summary>
-    /// <param name="eventData">Pointer event data.</param>
     public void OnEndDrag(PointerEventData eventData)
     {
         canvasGroup.blocksRaycasts = true;
 
+        // Still parented to the root means no slot accepted the drop: snap back where it came from.
+        // Equipment state is untouched, so the item stays equipped if it was.
         if (transform.parent == transform.root)
         {
-            if (OriginalSlot == null) return;
-
-            OriginalSlot.ClearSlot();
-            ReturnToOriginalParent();
+            transform.SetParent(originalParent);
         }
-        else
-        {
-            ResetRectTransform();
-        }
-    }
 
-    private void ReturnToOriginalParent()
-    {
-        transform.SetParent(originalParent);
-        ResetRectTransform();
-    }
-
-    private void ResetRectTransform()
-    {
-        if (transform is RectTransform rect)
-        {
-            rect.anchoredPosition = Vector2.zero;
-        }
+        UIUtils.ResetAnchoredPosition(transform);
     }
 }

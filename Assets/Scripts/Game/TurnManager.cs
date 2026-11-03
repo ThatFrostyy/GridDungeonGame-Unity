@@ -1,63 +1,47 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Manages turn-based flow between player and enemies, including turn transitions and enemy AI actions.
+/// Manages turn-based flow between the player and enemies.
 /// </summary>
 public class TurnManager : MonoBehaviour
 {
     [Header("Settings")]
     [Tooltip("Delay between enemy actions.")]
-    [SerializeField] private float enemyActionDelay = 0.5f; 
+    [SerializeField] private float enemyActionDelay = 0.5f;
 
     [Header("References")]
     [SerializeField] private Button endTurnButton;
 
-    private Enemy[] enemies;
     private Player player;
-
+    private PlayerHealth playerHealth;
     private bool playerTurn = true;
+
+    public static TurnManager Instance { get; private set; }
 
     public bool PlayerTurn => playerTurn;
     public float EnemyActionDelay => enemyActionDelay;
 
-    public static TurnManager Instance { get; private set; }
-
-    /// <summary>
-    /// Initializes references using the GameObjectLocator
-    /// </summary>
     private void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
+            return;
         }
 
+        Instance = this;
         InitializeReferences();
     }
 
-    /// <summary>
-    /// Gets necessary references from the GameObjectLocator
-    /// </summary>
-    private void InitializeReferences()
+    private void OnDestroy()
     {
-        if (GameObjectLocator.Instance != null)
+        if (Instance == this)
         {
-            player = GameObjectLocator.Instance.Player;
-
+            Instance = null;
         }
-        else
-        {
-            Debug.LogError("GameObjectLocator not found! Make sure it exists in the scene.", this);
-        }
-
-        enemies = Object.FindObjectsByType<Enemy>(FindObjectsSortMode.None);
     }
 
     private void Start()
@@ -65,65 +49,99 @@ public class TurnManager : MonoBehaviour
         StartPlayerTurn();
     }
 
+    private void InitializeReferences()
+    {
+        if (GameObjectLocator.Instance == null)
+        {
+            Debug.LogError("GameObjectLocator not found! Make sure it exists in the scene.", this);
+            return;
+        }
+
+        player = GameObjectLocator.Instance.Player;
+        playerHealth = GameObjectLocator.Instance.GetComponentByTag<PlayerHealth>("Player");
+    }
+
     /// <summary>
-    /// Begins the player's turn, enabling the end turn button and resetting player action points.
+    /// Begins the player's turn: re-enables the end turn button and restores action points.
     /// </summary>
     public void StartPlayerTurn()
     {
         playerTurn = true;
-        endTurnButton.interactable = true;
+        SetEndTurnInteractable(true);
         player.ResetActionPoints();
-
     }
 
     /// <summary>
-    /// Ends the player's turn, disables the end turn button, resets enemy action points, and starts the enemy turn.
+    /// Ends the player's turn and runs every enemy's turn.
     /// </summary>
     public void EndPlayerTurn()
     {
-        if (playerTurn)
+        if (!playerTurn)
         {
-            playerTurn = false;
-            endTurnButton.interactable = false;
-            foreach (var enemy in enemies)
-            {
-                enemy.ResetActionPoints();
-            }
-            StartCoroutine(EnemyTurn());
+            return;
         }
+
+        playerTurn = false;
+        SetEndTurnInteractable(false);
+        StartCoroutine(EnemyTurn());
     }
 
-    /// <summary>
-    /// Coroutine that processes each enemy's turn, executing their AI actions with delays.
-    /// </summary>
-    /// <returns>IEnumerator for coroutine execution.</returns>
     private IEnumerator EnemyTurn()
     {
-        foreach (var enemy in enemies)
+        // Copy the list so enemies dying mid-turn don't invalidate the iteration.
+        var enemies = new List<Enemy>(Enemy.Active);
+        foreach (Enemy enemy in enemies)
         {
-            if (enemy == null) 
-                continue;
-
-            if (enemy.TryGetComponent<EnemyAI>(out var ai))
+            if (enemy == null || !enemy.IsAlive)
             {
-                while (enemy.CurrentActionPoints > 0)
-                {
-                    bool actionDone = ai.PerformAI();
-                    if (actionDone)
-                    {
-                        enemy.UseActionPoint();
-                        yield return new WaitForSeconds(enemyActionDelay);
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
+                continue;
             }
 
+            enemy.ResetActionPoints();
+            yield return RunEnemyActions(enemy);
             yield return new WaitForSeconds(enemyActionDelay);
+
+            if (!IsPlayerAlive())
+            {
+                yield break;
+            }
         }
 
         StartPlayerTurn();
+    }
+
+    private IEnumerator RunEnemyActions(Enemy enemy)
+    {
+        if (!enemy.TryGetComponent(out EnemyAI ai))
+        {
+            yield break;
+        }
+
+        while (enemy != null && enemy.IsAlive && enemy.CurrentActionPoints > 0 && IsPlayerAlive())
+        {
+            if (!ai.PerformAI())
+            {
+                yield break;
+            }
+
+            enemy.UseActionPoint();
+
+            // Let movement finish before the next action starts.
+            yield return new WaitUntil(() => ai == null || !ai.IsBusy);
+            yield return new WaitForSeconds(enemyActionDelay);
+        }
+    }
+
+    private bool IsPlayerAlive()
+    {
+        return playerHealth == null || playerHealth.IsAlive;
+    }
+
+    private void SetEndTurnInteractable(bool interactable)
+    {
+        if (endTurnButton != null)
+        {
+            endTurnButton.interactable = interactable;
+        }
     }
 }

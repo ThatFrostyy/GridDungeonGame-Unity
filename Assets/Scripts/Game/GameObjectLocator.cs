@@ -1,32 +1,16 @@
-using UnityEngine;
+using System;
 using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.Tilemaps;
 
 /// <summary>
-/// Singleton that centralizes GameObject location by tag
-/// Avoids multiple FindGameObjectWithTag calls and caches important references
+/// Scene-level service locator that caches important references so other scripts
+/// don't have to repeat tag lookups.
 /// </summary>
 public class GameObjectLocator : MonoBehaviour
 {
-    #region Singleton
     public static GameObjectLocator Instance { get; private set; }
 
-    private void Awake()
-    {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-            InitializeReferences();
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
-    }
-    #endregion
-
-    #region Cached References
     [Header("Cached References")]
     [SerializeField] private Player cachedPlayer;
     [SerializeField] private Tilemap cachedTilemap;
@@ -35,119 +19,82 @@ public class GameObjectLocator : MonoBehaviour
     [SerializeField] private TileSelection cachedTileSelection;
     [SerializeField] private UIManager cachedUIManager;
 
-    private readonly Dictionary<string, GameObject> _tagCache = new Dictionary<string, GameObject>();
-    private readonly Dictionary<string, Component> _componentCache = new Dictionary<string, Component>();
-    #endregion
+    private readonly Dictionary<string, GameObject> tagCache = new();
+    private readonly Dictionary<(string tag, Type type), Component> componentCache = new();
 
-    #region Public Properties
-    public Player Player
-    {
-        get
-        {
-            if (cachedPlayer == null)
-                cachedPlayer = GetComponentByTag<Player>("Player");
-            return cachedPlayer;
-        }
-    }
-
-    public Tilemap Tilemap
-    {
-        get
-        {
-            if (cachedTilemap == null)
-                cachedTilemap = GetComponentByTag<Tilemap>("Tilemap");
-            return cachedTilemap;
-        }
-    }
-
-    public Tilemap ObstacleTilemapMap
-    {
-        get
-        {
-            if (cachedObstacleTilemapMap == null)
-                cachedObstacleTilemapMap = GetComponentByTag<Tilemap>("ObstacleTilemap");
-
-            return cachedObstacleTilemapMap;
-        }
-    }
-
-    public ObstacleTilemap ObstacleTilemap
-    {
-        get
-        {
-            if (cachedObstacleTilemap == null)
-                cachedObstacleTilemap = GetComponentByTag<ObstacleTilemap>("ObstacleTilemap");
-
-            return cachedObstacleTilemap;
-        }
-    }
-
-    public TileSelection TileSelection
-    {
-        get
-        {
-            if (cachedTileSelection == null)
-                cachedTileSelection = GetComponentByTag<TileSelection>("TileSelection");
-            return cachedTileSelection;
-        }
-    }
+    public Player Player => Resolve(ref cachedPlayer, "Player");
+    public Tilemap Tilemap => Resolve(ref cachedTilemap, "Tilemap");
+    public Tilemap ObstacleTilemapMap => Resolve(ref cachedObstacleTilemapMap, "ObstacleTilemap");
+    public ObstacleTilemap ObstacleTilemap => Resolve(ref cachedObstacleTilemap, "ObstacleTilemap");
+    public TileSelection TileSelection => Resolve(ref cachedTileSelection, "TileSelection");
 
     public UIManager UIManager
     {
         get
         {
             if (cachedUIManager == null)
+            {
                 cachedUIManager = FindFirstObjectByType<UIManager>();
+            }
+
             return cachedUIManager;
         }
     }
-    #endregion
 
-    #region Public Methods
-    /// <summary>
-    /// Gets a GameObject by tag with caching
-    /// </summary>
-    /// <param name="tag">Tag of the GameObject to search for</param>
-    /// <returns>Found GameObject or null</returns>
-    public GameObject GetGameObjectByTag(string tag)
+    private void Awake()
     {
-        if (_tagCache.TryGetValue(tag, out GameObject cachedObject) && cachedObject != null)
+        if (Instance != null && Instance != this)
         {
-            return cachedObject;
+            Destroy(gameObject);
+            return;
         }
 
-        GameObject foundObject = GameObject.FindGameObjectWithTag(tag);
-        if (foundObject != null)
-        {
-            _tagCache[tag] = foundObject;
-        }
+        Instance = this;
+        WarmUpReferences();
+    }
 
-        return foundObject;
+    private void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
+        }
     }
 
     /// <summary>
-    /// Gets a component by tag with caching
+    /// Gets a GameObject by tag, caching the result.
     /// </summary>
-    /// <typeparam name="T">Component type</typeparam>
-    /// <param name="tag">Tag of the GameObject containing the component</param>
-    /// <returns>Found component or null</returns>
-    public T GetComponentByTag<T>(string tag) where T : Component
+    public GameObject GetGameObjectByTag(string tag)
     {
-        string key = $"{tag}_{typeof(T).Name}";
-
-        if (_componentCache.TryGetValue(key, out Component cachedComponent) && cachedComponent != null)
+        if (tagCache.TryGetValue(tag, out GameObject cached) && cached != null)
         {
-            return cachedComponent as T;
+            return cached;
         }
 
-        GameObject gameObject = GetGameObjectByTag(tag);
-        if (gameObject != null)
+        GameObject found = GameObject.FindGameObjectWithTag(tag);
+        if (found != null)
         {
-            T component = gameObject.GetComponent<T>();
-            if (component != null)
-            {
-                _componentCache[key] = component;
-            }
+            tagCache[tag] = found;
+        }
+
+        return found;
+    }
+
+    /// <summary>
+    /// Gets a component on the GameObject with the given tag, caching the result.
+    /// </summary>
+    public T GetComponentByTag<T>(string tag) where T : Component
+    {
+        var key = (tag, typeof(T));
+        if (componentCache.TryGetValue(key, out Component cached) && cached != null)
+        {
+            return (T)cached;
+        }
+
+        GameObject target = GetGameObjectByTag(tag);
+        if (target != null && target.TryGetComponent(out T component))
+        {
+            componentCache[key] = component;
             return component;
         }
 
@@ -155,12 +102,12 @@ public class GameObjectLocator : MonoBehaviour
     }
 
     /// <summary>
-    /// Clears the caches (useful when objects are destroyed)
+    /// Clears all cached references (e.g. after the scene has been rebuilt).
     /// </summary>
     public void ClearCache()
     {
-        _tagCache.Clear();
-        _componentCache.Clear();
+        tagCache.Clear();
+        componentCache.Clear();
         cachedPlayer = null;
         cachedTilemap = null;
         cachedObstacleTilemapMap = null;
@@ -170,15 +117,11 @@ public class GameObjectLocator : MonoBehaviour
     }
 
     /// <summary>
-    /// Validates that an object with the specified tag exists
+    /// Checks that an object with the given tag exists, optionally warning when it doesn't.
     /// </summary>
-    /// <param name="tag">Tag to validate</param>
-    /// <param name="logWarning">Whether to show warning if object is not found</param>
-    /// <returns>True if exists, false if not</returns>
     public bool ValidateTagExists(string tag, bool logWarning = true)
     {
-        GameObject obj = GetGameObjectByTag(tag);
-        bool exists = obj != null;
+        bool exists = GetGameObjectByTag(tag) != null;
 
         if (!exists && logWarning)
         {
@@ -187,27 +130,29 @@ public class GameObjectLocator : MonoBehaviour
 
         return exists;
     }
-    #endregion
 
-    #region Private Methods
-    /// <summary>
-    /// Initializes references on awake
-    /// </summary>
-    private void InitializeReferences()
+    private T Resolve<T>(ref T cache, string tag) where T : Component
     {
-        // Pre-load important references
+        if (cache == null)
+        {
+            cache = GetComponentByTag<T>(tag);
+        }
+
+        return cache;
+    }
+
+    private void WarmUpReferences()
+    {
         _ = Player;
         _ = Tilemap;
-        _ = ObstacleTilemapMap; 
+        _ = ObstacleTilemapMap;
         _ = ObstacleTilemap;
         _ = TileSelection;
         _ = UIManager;
 
-        // Validate that critical objects exist
         ValidateTagExists("Player");
         ValidateTagExists("Tilemap");
         ValidateTagExists("ObstacleTilemap");
         ValidateTagExists("TileSelection");
     }
-    #endregion
 }

@@ -2,33 +2,62 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// World-space health bar that follows an enemy and faces the camera.
+/// </summary>
 public class EnemyHealthBar : MonoBehaviour
 {
     [SerializeField] private Image enemyHealthBarFill;
     [SerializeField] private TMP_Text enemyHealthText;
     [SerializeField] private Vector3 offset = new(0, 0, 0);
-    
-    private Transform target;   
 
-    /// <summary>
-    /// Sets up the enemy health bar if components are assigned
-    /// </summary>
-    public void Setup(EnemyHealth health, Transform targetTransform)
+    private Transform target;
+    private EnemyHealth health;
+    private Camera mainCamera;
+
+    public void Setup(EnemyHealth enemyHealth, Transform targetTransform)
     {
-        if (health != null && targetTransform != null)
+        if (enemyHealth == null || targetTransform == null)
         {
-            target = targetTransform;
-            health.OnHealthChanged += UpdateBar;
-            UpdateBar(health.CurrentHealth, health.MaxHealth);
+            return;
+        }
+
+        if (health != null)
+        {
+            health.OnHealthChanged -= UpdateBar;
+        }
+
+        health = enemyHealth;
+        target = targetTransform;
+        health.OnHealthChanged += UpdateBar;
+        UpdateBar(health.CurrentHealth, health.MaxHealth);
+    }
+
+    private void OnDestroy()
+    {
+        if (health != null)
+        {
+            health.OnHealthChanged -= UpdateBar;
         }
     }
 
     private void LateUpdate()
     {
-        if (target != null)
+        if (target == null)
         {
-            transform.position = target.position + offset;
-            transform.forward = Camera.main.transform.forward;
+            return;
+        }
+
+        transform.position = target.position + offset;
+
+        if (mainCamera == null)
+        {
+            mainCamera = Camera.main;
+        }
+
+        if (mainCamera != null)
+        {
+            transform.forward = mainCamera.transform.forward;
         }
     }
 
@@ -36,7 +65,11 @@ public class EnemyHealthBar : MonoBehaviour
     {
         if (enemyHealthBarFill != null)
         {
-            enemyHealthBarFill.fillAmount = (float)current / max;
+            enemyHealthBarFill.fillAmount = max > 0 ? (float)current / max : 0f;
+        }
+
+        if (enemyHealthText != null)
+        {
             enemyHealthText.text = $"{current}/{max}";
         }
     }
