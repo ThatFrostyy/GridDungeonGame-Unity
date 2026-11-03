@@ -73,3 +73,36 @@ crashlytics-build.properties
 # Temporary auto-generated Android Assets
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
+
+# --- Extra local/generated files ---
+# Patches, logs and scratch output
+*.patch
+*.diff
+*.orig
+*.rej
+*.log
+/[Ll]ogs/
+/Logs*/
+*.slnx
+*.csproj.user
+
+# Unity generated
+/[Uu]ser[Ss]ettings/
+/[Tt]emp/
+/[Pp]ackages/packages-lock.json.bak
+*.pidb.meta
+InitTestScene*.unity*
+/Assets/Plugins/Editor/JetBrains*
+
+# Editors / tools
+.idea/
+.vscode/
+.claude/
+*.swp
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db

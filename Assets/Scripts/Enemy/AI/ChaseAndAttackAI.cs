@@ -71,7 +71,7 @@ public class ChaseAndAttackAI : EnemyAI
 
     /// <summary>
     /// Builds the runtime state machine. Existing prefabs keep this script attached, so the
-    /// mover is added from code when missing.
+    /// mover and state machine are added from code when missing.
     /// </summary>
     private void CreateStateMachine()
     {
@@ -80,7 +80,11 @@ public class ChaseAndAttackAI : EnemyAI
             mover = gameObject.AddComponent<GridMover>();
         }
 
-        stateMachine = GetComponent<EnemyStateMachine>();
+        // Older prefabs don't have the state machine yet, so add it when missing.
+        if (!TryGetComponent(out stateMachine))
+        {
+            stateMachine = gameObject.AddComponent<EnemyStateMachine>();
+        }
 
         var config = new EnemyAIConfig(
             moveSpeed,

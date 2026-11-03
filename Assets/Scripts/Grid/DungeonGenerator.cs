@@ -29,6 +29,10 @@ public class DungeonGenerator : MonoBehaviour
     [SerializeField] private RuleTile floorTile;
     [SerializeField] private RuleTile wallTile;
 
+    [Header("Spawning")]
+    [Tooltip("Enemies are placed at least this many tiles (Manhattan) away from the player's start.")]
+    [SerializeField] private int minEnemySpawnDistance = 6;
+
     [Header("Seed")]
     [Tooltip("Generate the same dungeon every time.")]
     [SerializeField] private bool useFixedSeed = false;
@@ -55,6 +59,12 @@ public class DungeonGenerator : MonoBehaviour
     private void Awake()
     {
         Generate();
+    }
+
+    // Start (not Awake) so the player and every enemy have been enabled and registered.
+    private void Start()
+    {
+        PlaceActors();
     }
 
     /// <summary>
@@ -108,6 +118,72 @@ public class DungeonGenerator : MonoBehaviour
     {
         return random.Next(minInclusive, maxExclusive);
     }
+
+    #region Spawning
+
+    /// <summary>
+    /// Puts the player in the center of the first room and scatters the enemies over the floor,
+    /// away from the player.
+    /// </summary>
+    private void PlaceActors()
+    {
+        if (rooms.Count == 0)
+        {
+            return;
+        }
+
+        Vector2Int playerSpawn = Vector2Int.RoundToInt(rooms[0].center);
+
+        Player player = GameObjectLocator.Instance != null ? GameObjectLocator.Instance.Player : null;
+        if (player != null)
+        {
+            MoveToTile(player.transform, playerSpawn);
+        }
+
+        List<Vector2Int> candidates = FindEnemySpawnTiles(playerSpawn);
+        foreach (Enemy enemy in new List<Enemy>(Enemy.Active))
+        {
+            if (candidates.Count == 0)
+            {
+                Debug.LogWarning("Not enough free tiles to place every enemy.", this);
+                return;
+            }
+
+            int index = Next(0, candidates.Count);
+            MoveToTile(enemy.transform, candidates[index]);
+
+            // Swap-remove keeps this O(1) and guarantees no two enemies share a tile.
+            candidates[index] = candidates[candidates.Count - 1];
+            candidates.RemoveAt(candidates.Count - 1);
+        }
+    }
+
+    private List<Vector2Int> FindEnemySpawnTiles(Vector2Int playerSpawn)
+    {
+        var tiles = new List<Vector2Int>();
+
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                var tile = new Vector2Int(x, y);
+                if (grid[x, y] == CellType.Floor && GridUtils.ManhattanDistance(tile, playerSpawn) >= minEnemySpawnDistance)
+                {
+                    tiles.Add(tile);
+                }
+            }
+        }
+
+        return tiles;
+    }
+
+    private static void MoveToTile(Transform target, Vector2Int tile)
+    {
+        Vector2 world = GridUtils.GridToWorld(tile);
+        target.position = new Vector3(world.x, world.y, target.position.z);
+    }
+
+    #endregion
 
     #region Rooms
 
